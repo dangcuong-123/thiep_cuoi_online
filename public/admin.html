@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#57100f">
+  <title>Quản lý thiệp mời</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/fonts.css">
+  <link rel="stylesheet" href="/admin.css">
+  <script type="module" src="/admin.js"></script>
+</head>
+<body>
+  <main>
+    <header class="page-heading"><div><p class="eyebrow">THIỆP CƯỚI · KHÁCH MỜI</p><h1>Gửi một lời mời riêng</h1><p>Tạo thiệp có tên người nhận và theo dõi lời xác nhận.</p></div><a href="/" target="_blank" rel="noopener">Xem thiệp chung ↗</a></header>
+    <p id="page-status" role="status" aria-live="polite">Đang kiểm tra đăng nhập…</p>
+    <section id="login-panel" class="card login-card" hidden>
+      <h2>Đăng nhập quản trị</h2>
+      <form id="login-form"><label for="password">Mật khẩu</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="512"><button type="submit">Đăng nhập</button><p class="status" role="status" aria-live="polite"></p></form>
+    </section>
+    <div id="dashboard" hidden>
+      <div class="toolbar"><span id="base-url"></span><button id="logout" class="secondary" type="button">Đăng xuất</button></div>
+      <section class="card"><h2>Người nhận thiệp</h2><p>Nhập nguyên cách xưng hô bạn muốn hiển thị, ví dụ “Anh Tuấn và gia đình”.</p>
+        <form id="create-form"><label for="guest-name">Tên người nhận</label><div class="create-row"><input id="guest-name" name="name" maxlength="100" required placeholder="Anh Tuấn và gia đình" autocomplete="off"><button type="submit">Tạo thiệp riêng</button></div><p class="status" role="status" aria-live="polite"></p></form>
+        <div id="created" hidden><label for="created-url">Link vừa tạo</label><div class="create-row"><input id="created-url" readonly aria-label="Link thiệp vừa tạo"><button id="copy-created" type="button" class="secondary">Sao chép link</button></div></div>
+      </section>
+      <section class="card"><div class="list-heading"><h2>Danh sách thiệp</h2><button id="refresh" type="button" class="secondary">Làm mới</button></div><p id="summary"></p><label for="search">Tìm theo tên</label><input id="search" type="search" placeholder="Tìm người nhận…"><p id="empty" hidden>Chưa có thiệp nào. Tạo lời mời đầu tiên ở phía trên.</p><div id="invitation-list" class="invitation-list"></div></section>
+    </div>
+  </main>
+</body>
+</html>
