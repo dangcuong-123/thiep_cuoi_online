@@ -5,5 +5,8 @@
 .gift-trigger{width:200px;height:200px}.gift-illustration{width:200px;height:200px;object-fit:contain;transition:transform .3s}.gift-trigger:hover .gift-illustration{transform:rotate(-4deg)}.gift-title{border-radius:0;min-height:43px;min-width:184px;padding:7px 18px;margin:0 auto 24px;font-size:20px;font-weight:500}.gift-account .gift-qr{width:100%;max-width:300px;max-height:none;height:auto;object-fit:contain;background:white;padding:8px}.qr-pending{padding:24px 12px;color:#7b655c;font-style:italic}.gift-section .section-intro{padding-left:38px;padding-right:38px}
 
 
+/* Event heading and time use EB Garamond, including Vietnamese glyphs. */
+.event-card h3,.event-card .event-time{font-family:'EB Garamond',Garamond,Georgia,serif}
+
 /* Personal invitation names retain the wedding typography and wrap on phones. */
 .invitation-heading .guest-name{font-family:var(--font-serif),Georgia,serif;font-size:clamp(24px,7vw,34px);font-style:normal;font-weight:500;line-height:1.5;color:var(--wine);margin:18px 0;overflow-wrap:anywhere}.rsvp-guest-name{font-family:var(--font-serif),Georgia,serif;font-size:25px;line-height:1.5;text-align:center;overflow-wrap:anywhere;margin:0 0 26px}

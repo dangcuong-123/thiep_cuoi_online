@@ -6,6 +6,13 @@
   src: url(/assets/4iCv6Kp1b9dXlgt_CkvTtw.ttf) format('truetype');
 }
 @font-face {
+  font-family: 'EB Garamond';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url(/assets/EBGaramond-Variable.ttf) format('truetype');
+}
+@font-face {
   font-family: 'DM Serif Display';
   font-style: normal;
   font-weight: 400;
