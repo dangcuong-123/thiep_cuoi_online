@@ -35,7 +35,10 @@ export function loadConfig(filename, publicDir) {
   if (!Array.isArray(c.families) || c.families.length !== 2) fail('families', 'cần đúng 2 gia đình');
   (Array.isArray(c.families) ? c.families : []).forEach((value, i) => {
     const family = object(value, `families[${i}]`);
-    for (const key of ['title', 'father', 'mother', 'address']) string(family[key], `families[${i}].${key}`);
+    for (const key of ['title', 'address']) string(family[key], `families[${i}].${key}`);
+    for (const key of ['father', 'mother']) {
+      if (family[key] !== undefined) string(family[key], `families[${i}].${key}`, true);
+    }
   });
   if (!Array.isArray(c.events) || c.events.length < 1) fail('events', 'cần ít nhất một sự kiện');
   (Array.isArray(c.events) ? c.events : []).forEach((value, i) => {

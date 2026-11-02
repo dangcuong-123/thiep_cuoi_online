@@ -35,6 +35,15 @@ test('configuration validates fields, calendar dates and asset paths', t => {
   const folder = temporary(t), path = resolve(folder, 'config.json');
   const good = JSON.parse(readFileSync('config/wedding.json', 'utf8'));
   assert.equal(loadConfig('config/wedding.json', resolve('public')).couple.groom, good.couple.groom);
+  const optionalParents = structuredClone(good);
+  delete optionalParents.families[1].father;
+  optionalParents.families[0].mother = '';
+  writeFileSync(path, JSON.stringify(optionalParents));
+  assert.equal(loadConfig(path, resolve('public')).families[1].father, undefined);
+  assert.equal(loadConfig(path, resolve('public')).families[0].mother, '');
+  optionalParents.families[1].father = 123;
+  writeFileSync(path, JSON.stringify(optionalParents));
+  assert.throws(() => loadConfig(path, resolve('public')), /families\[1\].father/);
   const qrOnly = structuredClone(good);
   qrOnly.gifts = [{ title: 'Mừng cưới', qrImage: '/assets/qr-will-be-added-later.png' }];
   writeFileSync(path, JSON.stringify(qrOnly));

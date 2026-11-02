@@ -44,6 +44,10 @@ async function main() {
   const cal = calendar(day);
   const closeButton = `<button class="icon-button dialog-close" data-close aria-label="${text(ui.close)}">${icon('close')}</button>`;
   const formName = id => `<label for="${id}-name">${text(ui.name)}</label><input id="${id}-name" name="name" autocomplete="name" maxlength="100" placeholder="${text(ui.namePlaceholder)}" required>`;
+  const familyParents = family => {
+    const parents = [family.father, family.mother].filter(value => typeof value === 'string' && value.trim());
+    return parents.length ? `<p>${parents.map(text).join('<br>')}</p>` : '';
+  };
   const menu = [['home', ui.home], ['couple', ui.couple], ['events', ui.events], ['story', ui.story], ['album', ui.album], ['rsvp', ui.rsvp]];
   root.innerHTML = `
     <section id="home" class="cover">
@@ -72,7 +76,7 @@ async function main() {
     <section class="save-date reveal">${photo(p.saveTheDate)}<h2>${text(copy.saveTheDate)}</h2></section>
     <section id="events" class="invitation-section">
       <header class="invitation-heading reveal"><h2>${text(copy.invitationTitle)}</h2>${guest ? `<p class="guest-name">${text(guest.name)}</p>` : ''}<p>${text(copy.invitationText)}</p></header>
-      <div class="families reveal">${c.families.map(f => `<div><h3>${text(f.title)}</h3><p>${text(f.father)}<br>${text(f.mother)}</p><address>${text(f.address)}</address></div>`).join('')}</div>
+      <div class="families reveal">${c.families.map(f => `<div><h3>${text(f.title)}</h3>${familyParents(f)}<address>${text(f.address)}</address></div>`).join('')}</div>
       <div class="invitation-names reveal">${nameStack}</div>
       <div class="event-list">${c.events.map((event, i) => `<article class="event-card reveal"><h3>${text(event.title)}</h3><p class="event-time">${text(ui.atTime)} ${eventTime(event.startsAt)}</p><p class="event-date">${displayDate(event.startsAt)}</p>${event.lunarDate ? `<p class="lunar-date">${text(event.lunarDate)}</p>` : ''}<p class="at-venue">${text(ui.atVenue)}</p><h4>${text(event.venue)}</h4><address>${text(event.address)}</address><a class="map-link" href="${text(event.mapUrl)}" target="_blank" rel="noopener noreferrer">${icon('pin')}${text(ui.map)}</a>${decoration(d.flourish, `event-flourish flourish-${i % 2}`)}</article>`).join('')}</div>
     </section>

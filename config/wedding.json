@@ -1,5 +1,8 @@
 {
-  "couple": { "groom": "Minh Thành", "bride": "Bảo Ngọc" },
+  "couple": {
+    "groom": "Duy Cương",
+    "bride": "Cẩm Tú"
+  },
   "timezone": "Asia/Ho_Chi_Minh",
   "theme": {
     "accent": "#57100f",
@@ -11,25 +14,34 @@
     "date": "DM Serif Display"
   },
   "families": [
-    { "title": "NHÀ TRAI", "father": "Ông: Lê Đình Hùng", "mother": "Bà: Nguyễn Thị Vân", "address": "Số 20 Phan Đình Phùng, Quận Hải Châu, Đà Nẵng" },
-    { "title": "NHÀ GÁI", "father": "Ông: Nguyễn Văn Sơn", "mother": "Bà: Phạm Thị Hòa", "address": "44 Lê Viết Lượng, phường Vỹ Dạ, thành phố Huế" }
+    {
+      "title": "NHÀ TRAI",
+      "father": "Ông: Đặng Gia Dụng",
+      "mother": "Bà: Trần Thị Thắng",
+      "address": "Phường Hòa Bình, Tỉnh Phú Thọ"
+    },
+    {
+      "title": "NHÀ GÁI",
+      "mother": "Bà: Lê Thị Lệ Châu",
+      "address": "Phường Đồng Hới, Tỉnh Quảng Trị"
+    }
   ],
   "events": [
     {
       "title": "HÔN LỄ ĐƯỢC TỔ CHỨC",
-      "startsAt": "2027-10-20T09:00:00+07:00",
+      "startsAt": "2026-11-16T07:30:00+07:00",
       "lunarDate": "",
-      "venue": "TƯ GIA NAM",
-      "address": "Số 20 Phan Đình Phùng, Quận Hải Châu, Đà Nẵng",
-      "mapUrl": "https://www.google.com/maps/search/?api=1&query=20+Phan+Đình+Phùng+Đà+Nẵng"
+      "venue": "TƯ GIA NHÀ NỮ",
+      "address": "Ngõ 7,  Đường Trấn Ninh, TDP Đức Ninh, Phường Đồng Hới, Tỉnh Quảng Trị",
+      "mapUrl": "https://maps.app.goo.gl/5uJNvNeK7oDM8Z3i7"
     },
     {
       "title": "TIỆC CHUNG VUI ĐƯỢC TỔ CHỨC",
-      "startsAt": "2027-10-20T11:00:00+07:00",
+      "startsAt": "2026-11-15T11:00:00+07:00",
       "lunarDate": "",
-      "venue": "FOREVER PLAZA",
-      "address": "Số 44 Phan Đình Phùng, Quận Hải Châu, Đà Nẵng",
-      "mapUrl": "https://www.google.com/maps/search/?api=1&query=44+Phan+Đình+Phùng+Đà+Nẵng"
+      "venue": "Trung tâm tiệc cưới CHANG CHANG",
+      "address": "86 Đường Phạm Văn Đồng (Đường 36m cũ), Phường Đồng Hới, Tỉnh Quảng Trị",
+      "mapUrl": "https://maps.app.goo.gl/Ek63ydLyt25V8cd66"
     }
   ],
   "copy": {
@@ -50,54 +62,87 @@
     ],
     "calendarTitle": "THÁNG {month} YÊU THƯƠNG",
     "albumTitle": "OUR ALBUM",
-    "rsvpIntro": "CHÚNG MÌNH RẤT VUI NẾU BẠN XÁC NHẬN THAM DỰ ĐỂ CHÚNG MÌNH CHUẨN BỊ CHU ĐÁO HƠN",
+    "rsvpIntro": "“Sau 7 năm bên nhau, hôm nay là ngày chúng mình trở thành vợ chồng, là ngày bắt đầu một hành trình mới. Mong rằng những năm tháng sau này, chúng mình vẫn luôn chọn nhau, yêu thương nhau và cùng nhau đi thật lâu.”",
     "giftIntro": "MỖI MÓN QUÀ, DÙ LỚN HAY NHỎ, ĐỀU LÀ MỘT LỜI CHÚC THẬT ĐẸP MÀ CHÚNG MÌNH SẼ LUÔN GHI NHỚ.",
     "giftTitle": "HỘP QUÀ CƯỚI",
     "closing": "HÂN HẠNH ĐƯỢC ĐÓN TIẾP"
   },
   "ui": {
-    "day": "ngày", "hour": "giờ", "minute": "phút", "second": "giây",
-    "atTime": "VÀO LÚC", "atVenue": "TẠI", "map": "XEM VỊ TRÍ",
-    "weekdays": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
-    "rsvp": "Xác nhận tham dự", "wishes": "Gửi lời chúc", "menu": "Mục lục",
-    "home": "Thiệp mời", "couple": "Chúng mình", "events": "Lễ & tiệc", "story": "Câu chuyện", "album": "Album ảnh",
-    "soundOn": "SOUND ON", "soundOff": "SOUND OFF", "musicError": "Chưa phát được nhạc. Bạn thử lại nhé.",
-    "name": "Họ và tên", "namePlaceholder": "Nhập tên của bạn",
-    "attending": "Tham dự", "declined": "Rất tiếc, tôi bận", "sendRsvp": "Gửi Xác Nhận",
-    "message": "Lời chúc", "messagePlaceholder": "Gửi đôi lời yêu thương đến chúng mình…", "sendWish": "Gửi lời chúc",
+    "day": "ngày",
+    "hour": "giờ",
+    "minute": "phút",
+    "second": "giây",
+    "atTime": "VÀO LÚC",
+    "atVenue": "TẠI",
+    "map": "XEM VỊ TRÍ",
+    "weekdays": [
+      "MON",
+      "TUE",
+      "WED",
+      "THU",
+      "FRI",
+      "SAT",
+      "SUN"
+    ],
+    "rsvp": "Xác nhận tham dự",
+    "wishes": "Gửi lời chúc",
+    "menu": "Mục lục",
+    "home": "Thiệp mời",
+    "couple": "Chúng mình",
+    "events": "Lễ & tiệc",
+    "story": "Câu chuyện",
+    "album": "Album ảnh",
+    "soundOn": "SOUND ON",
+    "soundOff": "SOUND OFF",
+    "musicError": "Chưa phát được nhạc. Bạn thử lại nhé.",
+    "name": "Họ và tên",
+    "namePlaceholder": "Nhập tên của bạn",
+    "attending": "Tham dự",
+    "declined": "Rất tiếc, tôi bận",
+    "sendRsvp": "Gửi Xác Nhận",
+    "message": "Lời chúc",
+    "messagePlaceholder": "Gửi đôi lời yêu thương đến chúng mình…",
+    "sendWish": "Gửi lời chúc",
     "rsvpSuccess": "Cảm ơn bạn! Chúng mình đã nhận được xác nhận của bạn.",
-    "wishSuccess": "Cảm ơn lời chúc thật đẹp của bạn!", "sending": "Đang gửi…",
+    "wishSuccess": "Cảm ơn lời chúc thật đẹp của bạn!",
+    "sending": "Đang gửi…",
     "sendError": "Chưa gửi được. Nội dung vẫn được giữ lại, bạn vui lòng thử lại nhé.",
     "rateError": "Bạn đã gửi nhiều lần. Vui lòng đợi một phút rồi thử lại.",
-    "more": "Xem thêm", "close": "Đóng", "previous": "Ảnh trước", "next": "Ảnh tiếp theo",
-    "copyAccount": "Sao chép số tài khoản", "copied": "Đã sao chép", "copyError": "Không sao chép được. Bạn có thể chọn và sao chép số tài khoản bên trên.",
+    "more": "Xem thêm",
+    "close": "Đóng",
+    "previous": "Ảnh trước",
+    "next": "Ảnh tiếp theo",
+    "copyAccount": "Sao chép số tài khoản",
+    "copied": "Đã sao chép",
+    "copyError": "Không sao chép được. Bạn có thể chọn và sao chép số tài khoản bên trên.",
     "qrPending": "QR ngân hàng sẽ được cập nhật sớm.",
-    "imageAlt": "Ảnh cưới của {groom} và {bride}", "loading": "Đang mở thiệp…",
+    "imageAlt": "Ảnh cưới của {groom} và {bride}",
+    "loading": "Đang mở thiệp…",
     "loadError": "Chưa mở được thiệp. Vui lòng tải lại trang."
   },
   "photos": {
-    "cover": "/assets/bce7cb32-73ee-465c-a036-ded99b6f7aaf-large.jpg",
-    "groom": "/assets/ff2962c3-f425-40b9-8015-086023312d29-large.jpg",
-    "bride": "/assets/a204aa68-1a53-43cf-8bbb-6e5945434351-large.jpg",
-    "saveTheDate": "/assets/e6ef4c9b-9d9d-4d56-9bcf-fbeb743b58ba-large.jpg",
-    "calendar": "/assets/05e4484d-4caf-4d8e-a114-4b0a4633bfae-large.jpg",
-    "closing": "/assets/a3362e9a-994e-4b68-b25e-ec4b6412c899-large.jpg",
+    "cover": "/assets/photos/1.webp",
+    "groom": "/assets/photos/2.webp",
+    "bride": "/assets/photos/3.webp",
+    "saveTheDate": "/assets/photos/4.webp",
+    "calendar": "/assets/photos/5.webp",
+    "closing": "/assets/photos/6.webp",
     "slideshow": [
-      "/assets/788d7691-a9b4-4eff-9a47-76dca28c436a-small.jpg",
-      "/assets/a3362e9a-994e-4b68-b25e-ec4b6412c899-small.jpg",
-      "/assets/62436b42-9cdf-443c-a62f-2a48450b918e-small.jpg",
-      "/assets/6dfbffd2-ab83-4473-bcfc-1d6a2eb3e571-small.jpg",
-      "/assets/05e4484d-4caf-4d8e-a114-4b0a4633bfae-small.jpg"
+      "/assets/photos/7.webp",
+      "/assets/photos/8.webp",
+      "/assets/photos/9.webp",
+      "/assets/photos/10.webp",
+      "/assets/photos/11.webp"
     ],
     "album": [
-      "/assets/bce7cb32-73ee-465c-a036-ded99b6f7aaf-large.jpg",
-      "/assets/a3362e9a-994e-4b68-b25e-ec4b6412c899-large.jpg",
-      "/assets/a204aa68-1a53-43cf-8bbb-6e5945434351-large.jpg",
-      "/assets/ff2962c3-f425-40b9-8015-086023312d29-large.jpg",
-      "/assets/e6ef4c9b-9d9d-4d56-9bcf-fbeb743b58ba-large.jpg",
-      "/assets/05e4484d-4caf-4d8e-a114-4b0a4633bfae-large.jpg",
-      "/assets/62436b42-9cdf-443c-a62f-2a48450b918e-small.jpg",
-      "/assets/6dfbffd2-ab83-4473-bcfc-1d6a2eb3e571-small.jpg"
+      "/assets/photos/12.webp",
+      "/assets/photos/13.webp",
+      "/assets/photos/14.webp",
+      "/assets/photos/15.webp",
+      "/assets/photos/16.webp",
+      "/assets/photos/17.webp",
+      "/assets/photos/18.webp",
+      "/assets/photos/19.webp"
     ]
   },
   "decorations": {

@@ -65,7 +65,7 @@ Sửa **`config/wedding.json`**, lưu dưới dạng UTF-8, rồi dừng/chạy 
 | Trường | Nội dung |
 | --- | --- |
 | `couple` | Tên chú rể và cô dâu |
-| `families` | Hai gia đình: tiêu đề, bố, mẹ, địa chỉ |
+| `families` | Hai gia đình: tiêu đề, bố, mẹ, địa chỉ. Có thể bỏ trường bố/mẹ hoặc để `""` để ẩn dòng đó. |
 | `events` | Các sự kiện: tiêu đề, ngày giờ, địa điểm, địa chỉ, link bản đồ, ngày âm lịch |
 | `copy` | Lời mời, lời giới thiệu, từng đoạn câu chuyện, các tiêu đề và lời kết |
 | `ui` | Nhãn nút, biểu mẫu, thông báo, tên các ngày trong tuần |
