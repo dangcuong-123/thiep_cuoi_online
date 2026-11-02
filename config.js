@@ -6,6 +6,10 @@ export function loadConfig(filename, publicDir) {
   let c;
   try { c = JSON.parse(readFileSync(filename, 'utf8').replace(/^\uFEFF/, '')); }
   catch (error) { throw new Error(`config/wedding.json: ${error.message}`); }
+  return validateConfig(c, publicDir);
+}
+
+export function validateConfig(c, publicDir) {
   const errors = [];
   const fail = (field, message) => errors.push(`${field}: ${message}`);
   const string = (value, field, allowEmpty = false) => {
@@ -86,4 +90,26 @@ export function loadConfig(filename, publicDir) {
   });
   if (errors.length) throw new Error(`Cấu hình thiệp không hợp lệ:\n- ${errors.join('\n- ')}`);
   return c;
+}
+
+export function loadVariants(config, publicDir) {
+  const { sides, ...shared } = config;
+  if (sides !== undefined && (!sides || typeof sides !== 'object' || Array.isArray(sides))) throw new Error('sides: cần là object.');
+  if (sides && Object.keys(sides).some(side => !['bride', 'groom'].includes(side))) throw new Error('sides: chỉ hỗ trợ bride và groom.');
+  return [['bride', 'Nhà gái'], ['groom', 'Nhà trai']].map(([side, label]) => {
+    const overrides = sides?.[side] ?? {};
+    if (!overrides || typeof overrides !== 'object' || Array.isArray(overrides)) throw new Error(`sides.${side}: cần là object.`);
+    if (Object.keys(overrides).some(key => !['enabled', 'events', 'copy'].includes(key))) throw new Error(`sides.${side}: chỉ chỉnh enabled, events và copy; ảnh và QR dùng chung.`);
+    const enabled = overrides.enabled ?? side === 'bride';
+    if (typeof enabled !== 'boolean') throw new Error(`sides.${side}.enabled: cần true hoặc false.`);
+    if (overrides.copy !== undefined && (!overrides.copy || typeof overrides.copy !== 'object' || Array.isArray(overrides.copy))) throw new Error(`sides.${side}.copy: cần là object.`);
+    if (overrides.events !== undefined && !Array.isArray(overrides.events)) throw new Error(`sides.${side}.events: cần danh sách sự kiện.`);
+    if (enabled && side === 'groom' && !Array.isArray(overrides.events)) throw new Error('sides.groom.events: cần khai báo lịch và địa điểm riêng của nhà trai.');
+    const variant = { ...shared, events: overrides.events ?? shared.events, copy: { ...shared.copy, ...overrides.copy } };
+    if (enabled) {
+      try { validateConfig(variant, publicDir); }
+      catch (error) { throw new Error(`sides.${side}: ${error.message}`); }
+    }
+    return { side, label, enabled, config: variant };
+  });
 }

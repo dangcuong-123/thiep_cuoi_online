@@ -54,7 +54,21 @@ Mặc định máy chủ chỉ lắng nghe trên máy hiện tại. Để thử 
 
 Mở **http://localhost:3000/admin**. Mật khẩu local nằm trong `ADMIN_PASSWORD` của `.env`, được tạo bằng `npm run admin:setup`. Đăng nhập tồn tại 12 giờ; đăng xuất hủy phiên trong database.
 
-Nhập nguyên tên/xưng hô muốn hiển thị (ví dụ **Anh Tuấn và gia đình**), bấm **Tạo thiệp riêng**, rồi **Sao chép link**. Tên nằm dưới “Trân Trọng Kính Mời”. Khách chỉ chọn tham dự/không tham dự; gửi lại cập nhật phản hồi cũ. Nút **Làm mới** trên admin tải trạng thái mới nhất. Mỗi lần tạo là một thiệp riêng, kể cả tên trùng nhau.
+Chọn **Nhà gái** hoặc **Nhà trai**, nhập nguyên tên/xưng hô muốn hiển thị (ví dụ **Anh Tuấn và gia đình**), bấm **Tạo thiệp riêng**, rồi **Sao chép link**. Tên nằm dưới “Trân Trọng Kính Mời”. Khách chỉ chọn tham dự/không tham dự; gửi lại cập nhật phản hồi cũ. Nút **Làm mới** trên admin tải trạng thái mới nhất. Danh sách hiển thị bên mời và có bộ lọc nhà trai/nhà gái. Mỗi lần tạo là một thiệp riêng, kể cả tên trùng nhau.
+
+### Hai bản thiệp nhà trai và nhà gái
+
+Cả hai bản dùng chung tên cặp đôi, thông tin gia đình, ảnh, nhạc và QR trong `config/wedding.json`.
+
+- **Nhà gái:** dùng `events` và `copy` ở cấp ngoài cùng như trước. `sides.bride.enabled` đang là `true`.
+- **Nhà trai:** sửa từng sự kiện trong `sides.groom.events`: `startsAt`, `venue`, `address`, `mapUrl` và `lunarDate` nếu cần. Sửa lời mời trong `sides.groom.copy`. Có thể xóa một thẻ sự kiện nếu chỉ tổ chức một sự kiện.
+- Sau khi điền đủ, đổi **`sides.groom.enabled` thành `true`**. Chạy `npm run validate`, khởi động lại máy chủ và tải lại admin. Khi chưa bật, admin vẫn cho chọn Nhà trai nhưng khóa nút tạo link và giải thích nội dung cần hoàn thiện.
+
+Ngày giờ giữ định dạng `2026-11-16T07:30:00+07:00` (thay bằng ngày giờ thực tế của nhà trai). Sự kiện đầu tiên của mỗi bản quyết định ảnh bìa ghi ngày nào, đếm ngược và lịch tháng. Không dùng lịch nhà gái làm dữ liệu mẫu để gửi khách nhà trai.
+
+Xem thiệp chung nhà gái bằng `/?side=bride`, nhà trai bằng `/?side=groom`. Bản chưa bật chỉ hiện thông báo đang cập nhật, không hiển thị lịch của bên kia.
+
+Link riêng vẫn có dạng `/?guest=<mã>`. Bên mời được lưu trong database khi tạo; thêm `side` vào URL không đổi được bên mời của link đó. Các link đã tạo trước tính năng này giữ nguyên mã, phản hồi và được xếp vào **Nhà gái**, phù hợp với nội dung hiện tại. Bản sao lưu/CSV mới có thêm trường `side`; công cụ nhập vẫn nhận được backup cũ.
 
 `PUBLIC_BASE_URL` quyết định địa chỉ trong link được tạo. Link localhost chỉ mở trên máy này; muốn gửi khách từ xa hãy triển khai theo [DEPLOY.md](DEPLOY.md). Người có link riêng có thể xem tên và thay đổi phản hồi của thiệp đó; hãy gửi đúng người.
 
@@ -122,7 +136,9 @@ Ví dụ cấu hình hộp quà có đầy đủ thông tin:
 ]
 ```
 
-Có thể thêm tài khoản thứ hai. `qrImage` không bắt buộc; nếu ảnh chưa tồn tại, hộp thoại sẽ hiện thông báo chờ cập nhật. Đặt `gifts` thành `[]` khi muốn ẩn toàn bộ hộp quà. Nút sao chép dùng clipboard của trình duyệt; khi bị từ chối, người xem có thể chọn và sao chép số tài khoản trực tiếp.
+Nếu dùng hai tài khoản, đặt cô dâu ở `gifts[0]` (cột trái), chú rể ở `gifts[1]` (cột phải). Các trường chưa có thông tin có thể để `""`; không hiện nút sao chép khi chưa có số tài khoản.
+
+`qrImage` không bắt buộc; nếu ảnh chưa tồn tại, hộp thoại sẽ hiện thông báo chờ cập nhật. Đặt `gifts` thành `[]` khi muốn ẩn toàn bộ hộp quà. Nút sao chép dùng clipboard của trình duyệt; khi bị từ chối, người xem có thể chọn và sao chép số tài khoản trực tiếp.
 
 ## Dữ liệu khách mời
 

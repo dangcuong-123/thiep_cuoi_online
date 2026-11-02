@@ -16,7 +16,14 @@ const chrome = [process.env.BROWSER_PATH, 'C:/Program Files/Google/Chrome/Applic
 if (!chrome) throw new Error('Không tìm thấy Chrome/Edge. Đặt BROWSER_PATH đến tệp trình duyệt.');
 const dbPath = resolve(temp, 'qa.sqlite');
 const initialConfig = JSON.parse(readFileSync(resolve(root, 'config/wedding.json'), 'utf8'));
-initialConfig.gifts = [{ title: 'Hộp quà cưới', qrImage: '/assets/qa-missing-qr.png' }];
+initialConfig.sides = {
+  bride: { enabled: true },
+  groom: { enabled: true, events: [{ ...initialConfig.events[0], startsAt: '2027-12-18T09:00:00+07:00', venue: 'ĐỊA ĐIỂM NHÀ TRAI QA' }], copy: { invitationText: 'LỜI MỜI NHÀ TRAI QA' } },
+};
+initialConfig.gifts = [
+  { title: 'Mừng cưới cô dâu', qrImage: '/assets/qa-missing-qr.png' },
+  { title: 'Mừng cưới chú rể', bank: '', accountName: '', accountNumber: '', qrImage: '' },
+];
 const initialConfigPath = resolve(temp, 'initial.json'); writeFileSync(initialConfigPath, JSON.stringify(initialConfig));
 const adminPassword = 'browser-test-only';
 const app = createApp({ dbPath, rateLimit: 100, adminPassword, configPath: initialConfigPath });
@@ -73,6 +80,8 @@ try {
   await command('Page.navigate', { url });
   await until(`document.querySelector('#invitation')?.getAttribute('aria-busy')==='false' && !!document.querySelector('.cover')`);
   await evaluate('document.fonts.ready');
+  assert.equal(await evaluate(`document.querySelector('.cover-caption h2').textContent`), initialConfig.copy.tagline);
+  assert.equal(await evaluate(`!!document.querySelector('.cover-guest-name')`), false, 'generic invitation has no invented recipient');
   // Load lazy images before full-page capture.
   await evaluate(`Promise.all([...document.images].map(img=>{img.loading='eager'; return img.decode().catch(()=>{});}))`);
   const screenshot = async name => {
@@ -93,6 +102,9 @@ try {
   await evaluate(`document.querySelector('.gift-trigger').click()`);
   await until(`document.querySelector('#gift-dialog').open && document.querySelector('.gift-qr').hidden && !document.querySelector('.gift-qr').hasAttribute('src')`);
   assert.equal(await evaluate(`!document.querySelector('.qr-pending').hidden && !document.querySelector('.copy-account')`), true, 'missing QR shows pending without fake account');
+  assert.equal(await evaluate(`document.querySelectorAll('#gift-dialog .gift-account').length`), 2);
+  assert.equal(await evaluate(`document.querySelectorAll('#gift-dialog .gift-account')[1].querySelector('.gift-qr')===null`), true, 'unconfigured groom has no fake QR');
+  assert.equal(await evaluate(`!document.querySelectorAll('#gift-dialog .gift-account')[1].querySelector('.qr-pending').hidden`), true);
   await evaluate(`document.querySelector('#gift-dialog').close(); document.querySelector('.gift-title').click()`);
   assert.equal(await evaluate(`document.querySelector('#gift-dialog').open`), true, 'gift title also opens dialog');
   await evaluate(`document.querySelector('#gift-dialog').close()`);
@@ -139,12 +151,17 @@ try {
   await evaluate(`document.querySelector('#password').value=${JSON.stringify(adminPassword)};document.querySelector('#login-form').requestSubmit()`);
   await until(`!document.querySelector('#dashboard')?.hidden`);
   const guestName = 'Anh Nguyễn & gia đình <img src=x onerror=alert(1)>';
-  for (const name of [guestName, 'Chị Hà', 'Chị Hà']) {
+  for (const [name, side] of [[guestName, 'bride'], ['Chị Hà', 'groom'], ['Chị Hà', 'bride']]) {
     const previous = await evaluate(`document.querySelectorAll('.guest-card').length`);
-    await evaluate(`document.querySelector('#guest-name').value=${JSON.stringify(name)};document.querySelector('#create-form').requestSubmit()`);
+    await evaluate(`document.querySelector('#invitation-side').value=${JSON.stringify(side)};document.querySelector('#invitation-side').dispatchEvent(new Event('change'));document.querySelector('#guest-name').value=${JSON.stringify(name)};document.querySelector('#create-form').requestSubmit()`);
     await until(`document.querySelectorAll('.guest-card').length===${previous + 1}`);
   }
   const personal = await evaluate(`fetch('/api/admin/invitations').then(r=>r.json()).then(d=>d.invitations.find(i=>i.name===${JSON.stringify(guestName)}))`);
+  const groomPersonal = await evaluate(`fetch('/api/admin/invitations').then(r=>r.json()).then(d=>d.invitations.find(i=>i.side==='groom'))`);
+  await evaluate(`document.querySelector('#filter-side').value='groom';document.querySelector('#filter-side').dispatchEvent(new Event('change'))`);
+  assert.equal(await evaluate(`document.querySelectorAll('.guest-card').length`), 1);
+  assert.equal(await evaluate(`document.querySelector('.side-label').textContent`), 'Nhà trai');
+  await evaluate(`document.querySelector('#filter-side').value='';document.querySelector('#filter-side').dispatchEvent(new Event('change'))`);
   await screenshot('admin.png');
   await evaluate(`Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('denied')}}});document.querySelector('#copy-created').click()`);
   await until(`document.querySelector('#create-form .status').textContent.includes('Ctrl+C')`);
@@ -152,6 +169,8 @@ try {
   await command('Page.navigate', { url: personalUrl });
   await until(`!!document.querySelector('.guest-name')`);
   assert.equal(await evaluate(`document.querySelector('.guest-name').textContent`), guestName);
+  assert.equal(await evaluate(`document.querySelector('.cover-guest-name').textContent`), guestName);
+  assert.equal(await evaluate(`document.querySelector('.cover-guest-name').children.length`), 0, 'cover recipient is escaped');
   assert.equal(await evaluate(`!!document.querySelector('#rsvp-name')`), false);
   assert.equal(await evaluate(`document.querySelector('.guest-name').children.length`), 0, 'guest name escaped');
   for (const width of [320, 390, 1440]) {
@@ -167,6 +186,13 @@ try {
   await until(`!!document.querySelector('[data-form="rsvp"] .success')`);
   await evaluate(`document.querySelector('#events').scrollIntoView()`);
   await delay(400); await screenshot('personal-invitation.png');
+  await command('Page.navigate', { url: url + '/?guest=' + groomPersonal.token + '&side=bride' });
+  await until(`document.querySelector('#invitation')?.dataset.side==='groom' && document.querySelector('#invitation')?.getAttribute('aria-busy')==='false'`);
+  assert.equal(await evaluate(`document.querySelector('.cover-guest-name').textContent`), 'Chị Hà');
+  assert.equal(await evaluate(`document.querySelector('.invitation-heading>p:last-child').textContent`), 'LỜI MỜI NHÀ TRAI QA');
+  assert.equal(await evaluate(`document.querySelector('.event-card h4').textContent`), 'ĐỊA ĐIỂM NHÀ TRAI QA');
+  await evaluate(`document.querySelector('[value="attending"]').checked=true;document.querySelector('[data-form="rsvp"]').requestSubmit()`);
+  await until(`!!document.querySelector('[data-form="rsvp"] .success')`);
   await command('Page.navigate', { url: url + '/?guest=invalid' });
   await until(`!!document.querySelector('[role="alert"]')`);
   assert.equal(await evaluate(`!!document.querySelector('[data-form="rsvp"]')`), false);
@@ -179,9 +205,14 @@ try {
   // Exercise configured gifts and content escaping against another temporary server.
   const config = JSON.parse(readFileSync(resolve(root, 'config/wedding.json'), 'utf8'));
   config.couple.groom = 'Nguyễn Minh Thành <3';
-  config.gifts = [{ title: 'Mừng cưới chú rể', bank: 'Ngân hàng mẫu', accountName: 'NGUYEN MINH THANH', accountNumber: '0123456789', qrImage: config.photos.cover }];
+  config.gifts = [
+    { title: 'Mừng cưới cô dâu', bank: 'Ngân hàng mẫu', accountName: 'CO DAU QA', accountNumber: '0123456789', qrImage: config.photos.cover },
+    { title: 'Mừng cưới chú rể', bank: 'Ngân hàng thử', accountName: 'CHU RE QA', accountNumber: '9876543210', qrImage: config.photos.groom },
+  ];
   const configPath = resolve(temp, 'gifts.json'); writeFileSync(configPath, JSON.stringify(config));
-  extraApp = createApp({ configPath, dbPath: resolve(temp, 'gifts.sqlite') });
+  config.sides = { bride: { enabled: true }, groom: { enabled: false, events: [], copy: {} } };
+  writeFileSync(configPath, JSON.stringify(config));
+  extraApp = createApp({ configPath, dbPath: resolve(temp, 'gifts.sqlite'), adminPassword });
   await new Promise(resolve => extraApp.listen(0, '127.0.0.1', resolve));
   const extraUrl = `http://127.0.0.1:${extraApp.address().port}`;
   await command('Browser.grantPermissions', { origin: extraUrl, permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'] });
@@ -191,15 +222,40 @@ try {
   assert.equal(await evaluate(`document.querySelector('.label-names span').textContent`), config.couple.groom);
   await evaluate(`document.querySelector('[data-open="gift-dialog"]').click()`);
   await until(`!document.querySelector('.gift-qr').hidden && document.querySelector('.gift-qr').naturalWidth>0`);
+  await until(`[...document.querySelectorAll('.gift-qr')].every(img=>!img.hidden&&img.naturalWidth>0)`);
+  for (const width of [320, 390, 1440]) {
+    await viewport(width, 1000, width < 700);
+    const boxes = await evaluate(`[...document.querySelectorAll('#gift-dialog .gift-account')].map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,right:r.right}})`);
+    assert.equal(boxes.length, 2);
+    assert.ok(boxes[0].x < boxes[1].x && Math.abs(boxes[0].y-boxes[1].y)<1, 'bride left and groom right on the same row');
+    assert.equal(await evaluate(`document.querySelector('#gift-dialog').scrollWidth<=document.querySelector('#gift-dialog').clientWidth`), true, 'gift dialog has no horizontal overflow');
+    assert.ok(boxes[0].x >= 0 && boxes[1].right <= width);
+  }
+  await viewport(390, 1000, true);
+  const splitShot = await command('Page.captureScreenshot', {format:'png',captureBeyondViewport:false});
+  writeFileSync(resolve(artifacts,'gift-two-columns.png'),Buffer.from(splitShot.data,'base64'));
   assert.equal(await evaluate(`document.querySelector('.qr-pending').hidden`), true, 'configured QR replaces placeholder');
   assert.equal(await evaluate(`document.querySelector('#gift-dialog').open && document.querySelector('.account-number').textContent === '0123456789'`), true);
   await evaluate(`document.querySelector('.copy-account').click()`);
   await until(`!!document.querySelector('.copy-status').textContent`);
   assert.equal(await evaluate(`document.querySelector('.copy-status').textContent`), config.ui.copied);
+  await evaluate(`document.querySelectorAll('.copy-account')[1].click()`);
+  await until(`navigator.clipboard.readText().then(text=>text==='9876543210')`);
+  await command('Page.navigate', { url: extraUrl + '/admin' });
+  await until(`!document.querySelector('#login-panel')?.hidden`);
+  await evaluate(`document.querySelector('#password').value=${JSON.stringify(adminPassword)};document.querySelector('#login-form').requestSubmit()`);
+  await until(`!document.querySelector('#dashboard')?.hidden`);
+  await evaluate(`document.querySelector('#invitation-side').value='groom';document.querySelector('#invitation-side').dispatchEvent(new Event('change'))`);
+  assert.equal(await evaluate(`document.querySelector('#create-form button[type="submit"]').disabled`), true);
+  assert.equal(await evaluate(`document.querySelector('#side-status').textContent.includes('chưa có đủ thông tin')`), true);
+  await command('Page.navigate', { url: extraUrl + '/?side=groom' });
+  await until(`!!document.querySelector('[role="alert"]')`);
+  assert.equal(await evaluate(`document.querySelector('[role="alert"]').textContent.includes('đang chờ cập nhật')`), true);
   assert.deepEqual(errors, [], 'no uncaught browser exceptions');
   const db = new DatabaseSync(dbPath, { readOnly: true });
-  assert.equal(db.prepare('SELECT count(*) AS n FROM rsvps').get().n, 2);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM rsvps').get().n, 3);
   assert.equal(db.prepare('SELECT attendance FROM rsvps WHERE invitation_id IS NOT NULL').get().attendance, 'declined');
+  assert.equal(db.prepare("SELECT r.attendance FROM rsvps r JOIN invitations i ON r.invitation_id=i.id WHERE i.side='groom'").get().attendance, 'attending');
   assert.equal(db.prepare('SELECT count(*) AS n FROM wishes').get().n, 1); db.close();
   console.log('Browser QA passed: 390px, 320px, 1440px; local assets, forms, gifts, admin login/create/copy fallback/logout, duplicate names, personalized RSVP updates/reload, invalid links and escaping.');
   console.log(`Screenshots: ${artifacts}\nTemporary QA data: ${temp}`);

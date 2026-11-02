@@ -14,9 +14,6 @@ const icons = {
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]}</svg>`;
 
 async function main() {
-  const response = await fetch('/api/config');
-  if (!response.ok) throw new Error('config');
-  const c = await response.json(), { copy, ui, photos: p, decorations: d } = c;
   const params = new URLSearchParams(location.search);
   const guestToken = params.has('guest') ? params.get('guest') : null;
   let guest = null;
@@ -27,6 +24,15 @@ async function main() {
       : 'Chưa tải được thông tin khách mời. Vui lòng tải lại trang.' });
     guest = await result.json();
   }
+  // A personal link always uses the side saved with its token, not URL overrides.
+  const side = guest?.side ?? params.get('side') ?? 'bride';
+  const response = await fetch(`/api/config?side=${encodeURIComponent(side)}`, { cache: 'no-store' });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw Object.assign(new Error('config'), { userMessage: error.error || 'Chưa tải được thiệp. Vui lòng thử lại.' });
+  }
+  const c = await response.json(), { copy, ui, photos: p, decorations: d } = c;
+  root.dataset.side = side;
   const text = value => escape(value);
   const names = `${c.couple.groom} & ${c.couple.bride}`;
   const alt = ui.imageAlt.replace('{groom}', c.couple.groom).replace('{bride}', c.couple.bride);
@@ -61,7 +67,7 @@ async function main() {
         ${decoration(d.seal, 'seal')}
         <div class="keepsake-label">${decoration(d.label, 'label-frame')}<h1 class="label-names">${nameStack}</h1>${decoration(d.bow, 'label-bow')}</div>
       </div>
-      <div class="cover-caption reveal"><h2>${text(copy.tagline)}</h2><p class="cover-date">${displayDate(day)}</p>
+      <div class="cover-caption reveal"><h2>${text(copy.tagline)}</h2>${guest ? `<p class="cover-guest-name">${text(guest.name)}</p>` : ''}<p class="cover-date">${displayDate(day)}</p>
         <div class="countdown" aria-label="${text(copy.saveTheDate)}">${['day', 'hour', 'minute', 'second'].map((key, i) => `<div><span data-count="${i}">0</span><small>${text(ui[key])}</small></div>`).join('')}</div>
       </div>
     </section>
@@ -98,7 +104,7 @@ async function main() {
     <dialog id="menu-dialog" class="menu-dialog" aria-labelledby="menu-title">${closeButton}<h2 id="menu-title">${text(ui.menu)}</h2><nav>${menu.map(([id, title], i) => `<a href="#${id}"><small>0${i + 1}</small>${text(title)}${icon('arrow')}</a>`).join('')}</nav></dialog>
     <dialog id="wish-dialog" class="wish-dialog" aria-labelledby="wish-title">${closeButton}<form data-form="wishes"><h2 id="wish-title">${text(ui.wishes)}</h2><p class="wish-names">${text(names)}</p>${formName('wish')}<label for="wish-message">${text(ui.message)}</label><textarea id="wish-message" name="message" rows="5" maxlength="2000" placeholder="${text(ui.messagePlaceholder)}" required></textarea><button class="pill" type="submit">${text(ui.sendWish)}</button><p class="form-status" role="status" aria-live="polite"></p></form></dialog>
     <dialog id="lightbox" class="lightbox" aria-label="${text(copy.albumTitle)}">${closeButton}<div class="lightbox-stage"><button class="icon-button lightbox-previous" aria-label="${text(ui.previous)}">${icon('arrow')}</button><img alt="${text(alt)}"><button class="icon-button lightbox-next" aria-label="${text(ui.next)}">${icon('arrow')}</button></div><p class="lightbox-counter" role="status"></p></dialog>
-    ${c.gifts.length ? `<dialog id="gift-dialog" class="gift-dialog" aria-labelledby="gift-title">${closeButton}<h2 id="gift-title">${text(copy.giftTitle)}</h2>${c.gifts.map((gift, i) => `<article class="gift-account"><h3>${text(gift.title)}</h3>${gift.qrImage ? `<img class="gift-qr" data-qr-src="${text(gift.qrImage)}" alt="${text(gift.title)} QR" hidden>` : ''}<p class="qr-pending" role="status">${text(ui.qrPending || 'QR ngân hàng sẽ được cập nhật sớm.')}</p>${gift.bank ? `<p>${text(gift.bank)}</p>` : ''}${gift.accountName ? `<p>${text(gift.accountName)}</p>` : ''}${gift.accountNumber ? `<p class="account-number">${text(gift.accountNumber)}</p><button class="pill copy-account" data-gift="${i}">${text(ui.copyAccount)}</button>` : ''}</article>`).join('')}<p class="copy-status" role="status"></p></dialog>` : ''}
+    ${c.gifts.length ? `<dialog id="gift-dialog" class="gift-dialog${c.gifts.length > 1 ? ' gift-dialog-split' : ''}" aria-labelledby="gift-title">${closeButton}<h2 id="gift-title">${text(copy.giftTitle)}</h2><div class="gift-accounts">${c.gifts.map((gift, i) => `<article class="gift-account"><h3>${text(gift.title)}</h3><div class="gift-qr-slot">${gift.qrImage ? `<img class="gift-qr" data-qr-src="${text(gift.qrImage)}" alt="${text(gift.title)} QR" hidden>` : ''}<p class="qr-pending" role="status">${text(ui.qrPending || 'QR ngân hàng sẽ được cập nhật sớm.')}</p></div>${gift.bank ? `<p>${text(gift.bank)}</p>` : ''}${gift.accountName ? `<p>${text(gift.accountName)}</p>` : ''}${gift.accountNumber ? `<p class="account-number">${text(gift.accountNumber)}</p><button class="pill copy-account" data-gift="${i}">${text(ui.copyAccount)}</button>` : ''}</article>`).join('')}</div><p class="copy-status" role="status"></p></dialog>` : ''}
     <p class="toast" role="status" aria-live="polite"></p>
   `;
   root.setAttribute('aria-busy', 'false');

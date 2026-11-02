@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { DatabaseSync } from 'node:sqlite';
 import { createServer } from 'node:http';
+import { createHash } from 'node:crypto';
 import { createApp } from '../server.js';
 import { openStore } from '../lib/database.js';
 import { snapshot, importSnapshot, readSnapshot, writeCsvExports } from '../lib/data-tools.js';
@@ -73,7 +74,7 @@ test('personal links distinguish duplicate names; RSVP uses server name and upda
   const guest = guests[0];
   const lookup = await call(`/api/invitation?token=${guest.token}`);
   assert.equal(lookup.headers.get('cache-control'), 'no-store');
-  assert.deepEqual(await lookup.json(), { name: names[0], attendance: null, updatedAt: null });
+  assert.deepEqual(await lookup.json(), { name: names[0], side: 'bride', attendance: null, updatedAt: null });
   assert.equal((await call('/api/rsvp', { token: guest.token, name: 'Forged name', attendance: 'attending' })).status, 201);
   const before = (await db.execute('SELECT * FROM rsvps')).rows[0];
   assert.equal(before.name, names[0]);
@@ -145,13 +146,14 @@ test('JSON cloud backup format preserves personal tokens, identities and updated
   const dir = folder(t);
   const source = await openStore({ dbPath: resolve(dir, 'source.sqlite') }); t.after(() => source.close());
   const token = 'b'.repeat(48);
-  await source.execute('INSERT INTO invitations(id,token,name) VALUES (?,?,?)', [3, token, 'Gia đình Nguyễn']);
+  await source.execute('INSERT INTO invitations(id,token,name,side) VALUES (?,?,?,?)', [3, token, 'Gia đình Nguyễn', 'groom']);
   await source.execute('INSERT INTO rsvps(name,attendance,invitation_id,updated_at) VALUES (?,?,?,?)', ['Gia đình Nguyễn', 'declined', 3, '2026-10-30T12:00:00Z']);
   const data = await snapshot(source);
   const jsonPath = resolve(dir, 'cloud-backup.json'); writeFileSync(jsonPath, JSON.stringify(data));
   const target = await openStore({ dbPath: resolve(dir, 'target.sqlite') }); t.after(() => target.close());
   await importSnapshot(target, readSnapshot(jsonPath));
   assert.deepEqual(await snapshot(target), data);
+  assert.equal(data.tables.invitations[0].side, 'groom');
   const guest = (await target.execute('SELECT i.name,r.attendance FROM invitations i JOIN rsvps r ON i.id=r.invitation_id WHERE i.token=?', [token])).rows[0];
   assert.equal(guest.name, 'Gia đình Nguyễn'); assert.equal(guest.attendance, 'declined');
   writeCsvExports(data, resolve(dir, 'csv'));
@@ -177,4 +179,83 @@ test('serverless handler accepts a pre-parsed Vercel body and trusts proxy IP on
   assert.equal((await send('1.1.1.1', '/api/rsvp', body)).status, 201);
   assert.equal((await send('1.1.1.1', '/api/rsvp', body)).status, 429);
   assert.equal((await send('2.2.2.2', '/api/rsvp', body)).status, 201);
+});
+
+test('two enabled invitation variants use separate events/copy and share photos and gifts', async t => {
+  const dir = folder(t), configPath = resolve(dir, 'two-sides.json');
+  const config = JSON.parse(readFileSync('config/wedding.json', 'utf8'));
+  config.sides = {
+    bride: { enabled: true },
+    groom: { enabled: true, events: [{ ...config.events[0], title: 'LỄ NHÀ TRAI QA', startsAt: '2027-12-18T09:00:00+07:00', venue: 'ĐỊA ĐIỂM NHÀ TRAI QA' }], copy: { invitationText: 'LỜI MỜI NHÀ TRAI QA' } },
+  };
+  writeFileSync(configPath, JSON.stringify(config));
+  const { call, login, db } = await boot(t, { configPath });
+  const brideConfig = await (await call('/api/config?side=bride')).json();
+  const groomConfig = await (await call('/api/config?side=groom')).json();
+  assert.deepEqual(brideConfig.events, config.events);
+  assert.equal(groomConfig.events[0].venue, 'ĐỊA ĐIỂM NHÀ TRAI QA');
+  assert.equal(groomConfig.copy.invitationText, 'LỜI MỜI NHÀ TRAI QA');
+  assert.deepEqual(groomConfig.photos, brideConfig.photos);
+  assert.deepEqual(groomConfig.gifts, brideConfig.gifts);
+  assert.equal(groomConfig.sides, undefined);
+  assert.equal((await call('/api/config?side=invalid')).status, 400);
+  const cookie = await login();
+  const metadata = await (await call('/api/admin/session', undefined, cookie)).json();
+  assert.ok(metadata.variants.every(v => v.enabled));
+  const guests = [];
+  for (const side of ['bride', 'groom']) {
+    const response = await call('/api/admin/invitations', { name: 'Khách trùng tên', side }, cookie);
+    assert.equal(response.status, 201);
+    const guest = (await response.json()).invitation;
+    assert.equal(guest.side, side); guests.push(guest);
+    const lookup = await (await call(`/api/invitation?token=${guest.token}`)).json();
+    assert.equal(lookup.side, side);
+    assert.equal((await call('/api/rsvp', { token: guest.token, side: side === 'bride' ? 'groom' : 'bride', attendance: side === 'bride' ? 'declined' : 'attending' })).status, 201);
+  }
+  assert.notEqual(guests[0].token, guests[1].token);
+  const rows = (await db.execute('SELECT i.side,r.attendance FROM invitations i JOIN rsvps r ON i.id=r.invitation_id ORDER BY i.id')).rows;
+  assert.deepEqual(rows.map(r => ({ ...r })), [{ side: 'bride', attendance: 'declined' }, { side: 'groom', attendance: 'attending' }]);
+  for (const side of [null, '', 'other', {}, 42]) assert.equal((await call('/api/admin/invitations', { name: 'A', side }, cookie)).status, 400);
+});
+
+test('unconfigured groom cannot create links or accidentally show bride events', async t => {
+  const dir = folder(t), configPath = resolve(dir, 'draft.json');
+  const config = JSON.parse(readFileSync('config/wedding.json', 'utf8'));
+  config.sides = { bride: { enabled: true }, groom: { enabled: false, events: [], copy: {} } };
+  writeFileSync(configPath, JSON.stringify(config));
+  const { call, login, db } = await boot(t, { configPath });
+  assert.equal((await call('/api/config?side=groom')).status, 409);
+  const cookie = await login();
+  assert.equal((await call('/api/admin/invitations', { name: 'A', side: 'groom' }, cookie)).status, 409);
+  assert.equal((await db.execute('SELECT count(*) AS n FROM invitations')).rows[0].n, 0);
+  const legacy = await call('/api/admin/invitations', { name: 'Old client' }, cookie);
+  assert.equal(legacy.status, 201);
+  assert.equal((await legacy.json()).invitation.side, 'bride');
+  config.sides.groom.enabled = true;
+  writeFileSync(configPath, JSON.stringify(config));
+  assert.throws(() => createApp({ configPath, dbPath: resolve(dir, 'invalid.sqlite') }), /sides.groom/);
+});
+
+test('existing invitations migrate to bride without changing tokens, RSVP or legacy import receipts', async t => {
+  const dir = folder(t), path = resolve(dir, 'old-invitations.sqlite'), token = 'c'.repeat(48);
+  const old = new DatabaseSync(path);
+  old.exec(`CREATE TABLE invitations(id INTEGER PRIMARY KEY,token TEXT UNIQUE NOT NULL,name TEXT NOT NULL,created_at TEXT NOT NULL);
+    CREATE TABLE rsvps(id INTEGER PRIMARY KEY,name TEXT NOT NULL,attendance TEXT NOT NULL,created_at TEXT NOT NULL,invitation_id INTEGER,updated_at TEXT);
+    CREATE TABLE wishes(id INTEGER PRIMARY KEY,name TEXT NOT NULL,message TEXT NOT NULL,created_at TEXT NOT NULL);
+    CREATE TABLE data_imports(source_hash TEXT PRIMARY KEY,imported_at TEXT NOT NULL);`);
+  old.prepare('INSERT INTO invitations VALUES (1,?,?,?)').run(token, 'Khách cũ', '2026-01-01T00:00:00Z');
+  old.prepare('INSERT INTO rsvps VALUES (1,?,?,?,?,?)').run('Khách cũ', 'attending', '2026-01-01T00:00:00Z', 1, '2026-01-01T00:00:00Z');
+  const legacy = { version: 1, tables: { invitations: old.prepare('SELECT * FROM invitations').all(), rsvps: old.prepare('SELECT * FROM rsvps').all(), wishes: [] } };
+  const hash = createHash('sha256').update(JSON.stringify(legacy.tables)).digest('hex');
+  old.prepare('INSERT INTO data_imports VALUES (?,?)').run(hash, '2026-01-01T00:00:00Z');
+  old.close();
+  const db = await openStore({ dbPath: path }); t.after(() => db.close());
+  const row = (await db.execute('SELECT token,side FROM invitations')).rows[0];
+  assert.equal(row.token, token); assert.equal(row.side, 'bride');
+  assert.equal((await db.execute('SELECT attendance FROM rsvps')).rows[0].attendance, 'attending');
+  assert.equal(readdirSync(resolve(dir, 'backups')).length, 1);
+  assert.equal((await importSnapshot(db, legacy)).skipped, true);
+  const empty = await openStore({ dbPath: resolve(dir, 'restore.sqlite') }); t.after(() => empty.close());
+  await importSnapshot(empty, legacy);
+  assert.equal((await empty.execute('SELECT side FROM invitations')).rows[0].side, 'bride');
 });

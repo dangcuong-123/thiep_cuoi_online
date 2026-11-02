@@ -45,20 +45,19 @@
     }
   ],
   "copy": {
-    "tagline": "Together is our favorite place.",
+    "tagline": "Trân Trọng Kính Mời",
     "groomLabel": "Chú rể",
     "brideLabel": "Cô dâu",
     "chapterTitle": "A NEW CHAPTER.",
-    "chapterText": "Hôm nay không chỉ là ngày chúng mình trở thành vợ chồng, mà còn là ngày bắt đầu một hành trình mới. Mong rằng những năm tháng sau này, chúng mình vẫn luôn chọn nhau, yêu thương nhau và cùng nhau đi thật lâu.",
+    "chapterText": "Sau 7 năm bên nhau, hôm nay là ngày chúng mình trở thành vợ chồng, là ngày bắt đầu một hành trình mới. Mong rằng những năm tháng sau này, chúng mình vẫn luôn chọn nhau, yêu thương nhau và cùng nhau đi thật lâu.",
     "saveTheDate": "Save the Date",
     "invitationTitle": "Trân Trọng Kính Mời",
     "invitationText": "đến dự buổi tiệc chung vui cùng gia đình chúng tôi",
     "storyTitle": "OUR STORY",
     "story": [
-      "Chúng mình gặp nhau vào một ngày rất đỗi bình thường, nhưng chẳng ngờ đó lại là khởi đầu cho một hành trình thật đặc biệt.",
-      "Từ những cuộc trò chuyện đầu tiên, những buổi hẹn hò giản dị đến những tháng ngày cùng nhau sẻ chia và trưởng thành, tình yêu cứ thế lớn lên theo thời gian.",
-      "Sau những năm tháng đồng hành, chúng mình nhận ra rằng người mình muốn nắm tay bước tiếp trong cuộc đời chính là người đang ở bên cạnh.",
-      "Và hôm nay, chúng mình rất hạnh phúc khi có thể viết tiếp câu chuyện tình yêu ấy bằng một chương mới — một cuộc đời có nhau."
+      "Chúng mình gặp nhau từ những năm tháng thanh xuân tươi đẹp nhất- khi một cô sinh viên trường Dược và một chàng trai Bách Khoa bắt đầu viết nên câu chuyện tình yêu của riêng mình.",
+      "Từ những ngày đầu bỡ ngỡ của tuổi trẻ, chúng mình đã cùng nhau đi qua những tháng năm sinh viên, cùng sẻ chia niềm vui, những khó khăn và cả những ước mơ còn dang dở. Tình yêu ấy lớn lên theo năm tháng, cùng chúng mình trưởng thành, học cách thấu hiểu, bao dung và trở thành một phần không thể thiếu trong cuộc sống của nhau.",
+      "Và hôm nay, chúng mình rất hạnh phúc khi có thể viết tiếp câu chuyện tình yêu ấy bằng một chương mới- một cuộc đời có nhau."
     ],
     "calendarTitle": "THÁNG {month} YÊU THƯƠNG",
     "albumTitle": "OUR ALBUM",
@@ -125,24 +124,24 @@
     "groom": "/assets/photos/2.webp",
     "bride": "/assets/photos/3.webp",
     "saveTheDate": "/assets/photos/4.webp",
-    "calendar": "/assets/photos/5.webp",
-    "closing": "/assets/photos/6.webp",
+    "calendar": "/assets/photos/10.webp",
+    "closing": "/assets/photos/19.webp",
     "slideshow": [
+      "/assets/photos/5.webp",
+      "/assets/photos/6.webp",
       "/assets/photos/7.webp",
       "/assets/photos/8.webp",
-      "/assets/photos/9.webp",
-      "/assets/photos/10.webp",
-      "/assets/photos/11.webp"
+      "/assets/photos/9.webp"
     ],
     "album": [
+      "/assets/photos/11.webp",
       "/assets/photos/12.webp",
       "/assets/photos/13.webp",
       "/assets/photos/14.webp",
       "/assets/photos/15.webp",
       "/assets/photos/16.webp",
       "/assets/photos/17.webp",
-      "/assets/photos/18.webp",
-      "/assets/photos/19.webp"
+      "/assets/photos/18.webp"
     ]
   },
   "decorations": {
@@ -160,11 +159,48 @@
   "music": "/assets/69674547d64e39b0f8205e9e.mp3",
   "gifts": [
     {
-      "title": "Mừng cưới cô dâu & chú rể",
-      "bank": "",
-      "accountName": "",
-      "accountNumber": "",
-      "qrImage": "/assets/qr-ngan-hang.png"
+      "title": "Mừng cưới cô dâu",
+      "bank": "Vietcombank",
+      "accountName": "LE THI CAM TU",
+      "accountNumber": "1054053665",
+      "qrImage": "/assets/QR_TU.JPG"
+    },
+    {
+      "title": "Mừng cưới chú rể",
+      "bank": "VPbank",
+      "accountName": "DANG DUY CUONG",
+      "accountNumber": "0915514389",
+      "qrImage": "/assets/qr_Cuong.JPG"
     }
-  ]
+  ],
+  "sides": {
+    "bride": {
+      "enabled": true
+    },
+    "groom": {
+      "enabled": true,
+      "events": [
+        {
+          "title": "HÔN LỄ ĐƯỢC TỔ CHỨC",
+          "startsAt": "2026-11-28T08:30:00+07:00",
+          "lunarDate": "",
+          "venue": "TƯ GIA NHÀ NAM",
+          "address": "Số 54, Đường Lê Duẩn (Cổng chữ A), Phường Hòa Bình, Tỉnh Phú Thọ",
+          "mapUrl": "https://maps.app.goo.gl/vWejeecjjDES1LEW9"
+        },
+        {
+          "title": "TIỆC CHUNG VUI ĐƯỢC TỔ CHỨC",
+          "startsAt": "2026-11-28T10:30:00+07:00",
+          "lunarDate": "",
+          "venue": "Tầng 5, Trung tâm tiệc cưới Diamond Palace",
+          "address": "Số 129, Đường Lê Thành Tông, Phường Hòa Bình, Tỉnh Phú Thọ",
+          "mapUrl": "https://maps.app.goo.gl/kfrGR8tyqUXuHp3i8"
+        }
+      ],
+      "copy": {
+        "invitationTitle": "Trân Trọng Kính Mời",
+        "invitationText": "đến dự buổi tiệc chung vui cùng gia đình chúng tôi"
+      }
+    }
+  }
 }

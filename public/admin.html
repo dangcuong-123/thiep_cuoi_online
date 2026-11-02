@@ -22,10 +22,10 @@
     <div id="dashboard" hidden>
       <div class="toolbar"><span id="base-url"></span><button id="logout" class="secondary" type="button">Đăng xuất</button></div>
       <section class="card"><h2>Người nhận thiệp</h2><p>Nhập nguyên cách xưng hô bạn muốn hiển thị, ví dụ “Anh Tuấn và gia đình”.</p>
-        <form id="create-form"><label for="guest-name">Tên người nhận</label><div class="create-row"><input id="guest-name" name="name" maxlength="100" required placeholder="Anh Tuấn và gia đình" autocomplete="off"><button type="submit">Tạo thiệp riêng</button></div><p class="status" role="status" aria-live="polite"></p></form>
+        <form id="create-form"><label for="invitation-side">Tạo thiệp cho</label><select id="invitation-side" name="side" required><option value="bride">Nhà gái</option><option value="groom">Nhà trai</option></select><p id="side-status" role="status" aria-live="polite"></p><label for="guest-name">Tên người nhận</label><div class="create-row"><input id="guest-name" name="name" maxlength="100" required placeholder="Anh Tuấn và gia đình" autocomplete="off"><button type="submit">Tạo thiệp riêng</button></div><p class="status" role="status" aria-live="polite"></p></form>
         <div id="created" hidden><label for="created-url">Link vừa tạo</label><div class="create-row"><input id="created-url" readonly aria-label="Link thiệp vừa tạo"><button id="copy-created" type="button" class="secondary">Sao chép link</button></div></div>
       </section>
-      <section class="card"><div class="list-heading"><h2>Danh sách thiệp</h2><button id="refresh" type="button" class="secondary">Làm mới</button></div><p id="summary"></p><label for="search">Tìm theo tên</label><input id="search" type="search" placeholder="Tìm người nhận…"><p id="empty" hidden>Chưa có thiệp nào. Tạo lời mời đầu tiên ở phía trên.</p><div id="invitation-list" class="invitation-list"></div></section>
+      <section class="card"><div class="list-heading"><h2>Danh sách thiệp</h2><button id="refresh" type="button" class="secondary">Làm mới</button></div><label for="filter-side">Lọc theo bên mời</label><select id="filter-side"><option value="">Tất cả</option><option value="bride">Nhà gái</option><option value="groom">Nhà trai</option></select><p id="summary"></p><label for="search">Tìm theo tên</label><input id="search" type="search" placeholder="Tìm người nhận…"><p id="empty" hidden>Chưa có thiệp nào. Tạo lời mời đầu tiên ở phía trên.</p><div id="invitation-list" class="invitation-list"></div></section>
     </div>
   </main>
 </body>

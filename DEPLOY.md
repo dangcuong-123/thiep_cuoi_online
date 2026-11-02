@@ -117,6 +117,12 @@ dòng trong bảng `admin_sessions` qua Turso dashboard rồi redeploy.
 
 ## 5. Nghiệm thu trước khi gửi khách
 
+Khi triển khai bản có tính năng nhà trai/nhà gái, chạy `npm run data:backup` với
+Turso Production trước khi push. Ứng dụng tự bổ sung cột `invitations.side`, giữ
+nguyên mã link và RSVP cũ; các thiệp cũ được xếp vào nhà gái. Hoàn thiện
+`sides.groom.events`, `sides.groom.copy` và bật `sides.groom.enabled` trước khi
+gửi thiệp nhà trai. Không đặt `enabled: true` khi ngày giờ/địa điểm còn để trống.
+
 - Mở `/admin`, đăng nhập, tạo một thiệp thử và sao chép link.
 - Tắt Wi-Fi trên điện thoại, dùng dữ liệu di động mở link; kiểm tra đúng tên.
 - Xác nhận tham dự rồi đổi sang không tham dự. Bấm Làm mới ở admin để kiểm tra.
