@@ -1,78 +1,78 @@
-﻿@font-face {
+@font-face {
   font-family: 'Carattere';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/assets/4iCv6Kp1b9dXlgt_CkvTtw.ttf) format('truetype');
+  src: url(/assets/4iCv6Kp1b9dXlgt_CkvTtw.woff2) format('woff2');
 }
 @font-face {
   font-family: 'EB Garamond';
   font-style: normal;
   font-weight: 400 800;
   font-display: swap;
-  src: url(/assets/EBGaramond-Variable.ttf) format('truetype');
+  src: url(/assets/EBGaramond-Variable.woff2) format('woff2');
 }
 @font-face {
   font-family: 'DM Serif Display';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/assets/-nFnOHM81r4j6k0gjAW3mujVU2B2K_c.ttf) format('truetype');
+  src: url(/assets/-nFnOHM81r4j6k0gjAW3mujVU2B2K_c.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Montserrat';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/assets/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Ew-.ttf) format('truetype');
+  src: url(/assets/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Ew-.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Montserrat';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url(/assets/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtZ6Ew-.ttf) format('truetype');
+  src: url(/assets/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtZ6Ew-.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Montserrat';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url(/assets/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCu170w-.ttf) format('truetype');
+  src: url(/assets/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCu170w-.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Pinyon Script';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/assets/6xKpdSJbL9-e9LuoeQiDRQR8aOI.ttf) format('truetype');
+  src: url(/assets/6xKpdSJbL9-e9LuoeQiDRQR8aOI.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Playfair Display';
   font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url(/assets/nuFRD-vYSZviVYUb_rj3ij__anPXDTnCjmHKM4nYO7KN_qiTbtY.ttf) format('truetype');
+  src: url(/assets/nuFRD-vYSZviVYUb_rj3ij__anPXDTnCjmHKM4nYO7KN_qiTbtY.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Playfair Display';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url(/assets/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQ.ttf) format('truetype');
+  src: url(/assets/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQ.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Playfair Display';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url(/assets/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKd3vUDQ.ttf) format('truetype');
+  src: url(/assets/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKd3vUDQ.woff2) format('woff2');
 }
 @font-face {
   font-family: 'Playfair Display';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url(/assets/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKebukDQ.ttf) format('truetype');
+  src: url(/assets/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKebukDQ.woff2) format('woff2');
 }
 

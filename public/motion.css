@@ -1,0 +1,59 @@
+/* Animate transforms and opacity so scrolling stays light on phones. */
+.will-reveal {
+  --reveal-x: 0px;
+  --reveal-y: 32px;
+  --reveal-scale: 1;
+  opacity: 0;
+  transform: translate(var(--reveal-x), var(--reveal-y)) scale(var(--reveal-scale));
+  transition: opacity .85s ease, transform 1.05s cubic-bezier(.2,.7,.2,1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.will-reveal[data-reveal="left"] { --reveal-x: -28px; --reveal-y: 0px; }
+.will-reveal[data-reveal="right"] { --reveal-x: 28px; --reveal-y: 0px; }
+.will-reveal[data-reveal="zoom"] { --reveal-scale: .94; --reveal-y: 20px; }
+.will-reveal.visible { opacity: 1; transform: none; }
+
+.motion-enabled .envelope-back,
+.motion-enabled .envelope-front { animation: envelope-arrive 1.3s cubic-bezier(.2,.7,.2,1) both; }
+.motion-enabled .cover-photo { animation: photo-emerge 1.7s .15s cubic-bezier(.2,.7,.2,1) both; }
+.motion-enabled .seal { animation: seal-arrive .9s .65s ease both; }
+.motion-enabled .keepsake-label { transform-origin: 50% 12%; animation: label-arrive 1.6s .5s ease both; }
+.motion-enabled .lilies { transform-origin: 50% 95%; animation: lily-sway 7s ease-in-out infinite; }
+.motion-enabled .roses { transform-origin: 20% 90%; animation: rose-sway 8s ease-in-out infinite; }
+.motion-enabled .ribbon { animation: ribbon-float 6s ease-in-out infinite; }
+.envelope-scene:not(.motion-active) > *,
+.motion-paused .envelope-scene > * { animation-play-state: paused; }
+.motion-enabled dialog[open] { animation: dialog-arrive .3s ease-out both; }
+.motion-enabled dialog[open]::backdrop { animation: backdrop-arrive .3s ease-out both; }
+.motion-enabled .gift-trigger:hover .gift-illustration { animation: gift-rock .65s ease-in-out; }
+.map-link, .pill, .submit-button { transition: transform .2s ease, box-shadow .2s ease; }
+.map-link:active, .pill:active, .submit-button:active { transform: scale(.97); }
+@media (hover: hover) {
+  .pill:hover, .submit-button:hover { transform: translateY(-2px); box-shadow: 0 6px 18px #57100f20; }
+}
+@keyframes envelope-arrive {
+  from { opacity: 0; transform: translateY(35px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes photo-emerge {
+  from { opacity: 0; transform: translateY(80px) rotate(-5deg) scale(.94); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes seal-arrive {
+  from { opacity: 0; transform: scale(.65) rotate(-15deg); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes label-arrive {
+  0% { opacity: 0; transform: rotate(10deg) translateY(12px); }
+  65% { opacity: 1; transform: rotate(-3deg); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes lily-sway { 0%,100% { transform: rotate(5.7deg); } 50% { transform: rotate(8deg); } }
+@keyframes rose-sway { 0%,100% { transform: rotate(0); } 50% { transform: rotate(-2deg); } }
+@keyframes ribbon-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px) rotate(2deg); } }
+@keyframes dialog-arrive { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes backdrop-arrive { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gift-rock { 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .will-reveal { opacity: 1; transform: none; }
+}

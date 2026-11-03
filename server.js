@@ -4,6 +4,7 @@ import { resolve, dirname, extname, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadConfig, loadVariants } from './config.js';
 import { createApi, json, securityHeaders } from './lib/api.js';
+import { publicCatalog } from './lib/public-config.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = resolve(ROOT, 'public');
@@ -11,11 +12,16 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=u
 
 export function createApp(options = {}) {
   const config = loadConfig(options.configPath || resolve(ROOT, 'config/wedding.json'), PUBLIC);
-  const api = createApi({ ...options, config, variants: loadVariants(config, PUBLIC) });
+  const variants = loadVariants(config, PUBLIC);
+  const api = createApi({ ...options, config, variants });
   const server = createServer(async (req, res) => {
     for (const [key, value] of Object.entries(securityHeaders)) res.setHeader(key, value);
     try {
       const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+      if (pathname === '/invitation-config.json' && ['GET', 'HEAD'].includes(req.method)) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+        return res.end(req.method === 'HEAD' ? undefined : JSON.stringify(publicCatalog(variants)));
+      }
       if (pathname.startsWith('/api/')) return api(req, res);
       if (!['GET', 'HEAD'].includes(req.method)) return json(res, 405, { error: 'Phương thức không hỗ trợ.' }, { Allow: 'GET, HEAD' });
       const filename = resolve(PUBLIC, pathname === '/' ? 'index.html' : pathname === '/admin' || pathname === '/admin/' ? 'admin.html' : '.' + pathname);

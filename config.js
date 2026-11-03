@@ -2,14 +2,14 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { TIMEZONE } from './public/core.js';
 
-export function loadConfig(filename, publicDir) {
+export function loadConfig(filename, publicDir, options) {
   let c;
   try { c = JSON.parse(readFileSync(filename, 'utf8').replace(/^\uFEFF/, '')); }
   catch (error) { throw new Error(`config/wedding.json: ${error.message}`); }
-  return validateConfig(c, publicDir);
+  return validateConfig(c, publicDir, options);
 }
 
-export function validateConfig(c, publicDir) {
+export function validateConfig(c, publicDir, { checkAssets = true } = {}) {
   const errors = [];
   const fail = (field, message) => errors.push(`${field}: ${message}`);
   const string = (value, field, allowEmpty = false) => {
@@ -24,7 +24,7 @@ export function validateConfig(c, publicDir) {
     if (typeof value !== 'string' || !/^\/assets\/[a-zA-Z0-9_./-]+$/.test(value) || value.includes('..')) {
       fail(field, 'cần là đường dẫn local /assets/tên-tệp'); return;
     }
-    if (!allowMissing && !existsSync(resolve(publicDir, value.slice(1)))) fail(field, `không tìm thấy tệp ${value}`);
+    if (checkAssets && !allowMissing && !existsSync(resolve(publicDir, value.slice(1)))) fail(field, `không tìm thấy tệp ${value}`);
   };
   c = object(c, 'config');
   const couple = object(c.couple, 'couple');
@@ -92,7 +92,7 @@ export function validateConfig(c, publicDir) {
   return c;
 }
 
-export function loadVariants(config, publicDir) {
+export function loadVariants(config, publicDir, options) {
   const { sides, ...shared } = config;
   if (sides !== undefined && (!sides || typeof sides !== 'object' || Array.isArray(sides))) throw new Error('sides: cần là object.');
   if (sides && Object.keys(sides).some(side => !['bride', 'groom'].includes(side))) throw new Error('sides: chỉ hỗ trợ bride và groom.');
@@ -107,7 +107,7 @@ export function loadVariants(config, publicDir) {
     if (enabled && side === 'groom' && !Array.isArray(overrides.events)) throw new Error('sides.groom.events: cần khai báo lịch và địa điểm riêng của nhà trai.');
     const variant = { ...shared, events: overrides.events ?? shared.events, copy: { ...shared.copy, ...overrides.copy } };
     if (enabled) {
-      try { validateConfig(variant, publicDir); }
+      try { validateConfig(variant, publicDir, options); }
       catch (error) { throw new Error(`sides.${side}: ${error.message}`); }
     }
     return { side, label, enabled, config: variant };

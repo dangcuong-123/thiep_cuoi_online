@@ -1,4 +1,5 @@
 import { displayDate, eventTime, countdown, calendar } from './core.js';
+import { setupMotion } from './motion.js';
 
 const root = document.querySelector('#invitation');
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -15,6 +16,12 @@ const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 
 async function main() {
   const params = new URLSearchParams(location.search);
+  // Public content comes from the CDN while a personal link resolves its recipient.
+  // Catch immediately so a failed fetch cannot become an unhandled rejection.
+  const catalogRequest = fetch('/invitation-config.json').then(async response => {
+    if (!response.ok) throw new Error('config');
+    return { catalog: await response.json() };
+  }).catch(error => ({ error }));
   const guestToken = params.has('guest') ? params.get('guest') : null;
   let guest = null;
   if (guestToken !== null) {
@@ -26,12 +33,12 @@ async function main() {
   }
   // A personal link always uses the side saved with its token, not URL overrides.
   const side = guest?.side ?? params.get('side') ?? 'bride';
-  const response = await fetch(`/api/config?side=${encodeURIComponent(side)}`, { cache: 'no-store' });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw Object.assign(new Error('config'), { userMessage: error.error || 'Chưa tải được thiệp. Vui lòng thử lại.' });
-  }
-  const c = await response.json(), { copy, ui, photos: p, decorations: d } = c;
+  const result = await catalogRequest;
+  if (result.error) throw result.error;
+  const variant = result.catalog.find(item => item.side === side);
+  if (!variant) throw Object.assign(new Error('side'), { userMessage: 'Loại thiệp không hợp lệ. Chọn nhà trai hoặc nhà gái.' });
+  if (!variant.enabled) throw Object.assign(new Error('side'), { userMessage: `Thiệp ${variant.label.toLocaleLowerCase('vi')} đang chờ cập nhật ngày giờ, địa điểm và lời mời. Vui lòng liên hệ người gửi.` });
+  const c = variant.config, { copy, ui, photos: p, decorations: d } = c;
   root.dataset.side = side;
   const text = value => escape(value);
   const names = `${c.couple.groom} & ${c.couple.bride}`;
@@ -39,11 +46,13 @@ async function main() {
   document.title = `${names} — ${ui.home}`;
   document.querySelector('meta[name="description"]').content = `${names} · ${displayDate(c.events[0].startsAt)} · ${copy.invitationText}`;
   document.querySelector('meta[name="theme-color"]').content = c.theme.accent;
-  const fonts = document.createElement('link');
-  fonts.rel = 'stylesheet'; fonts.href = c.theme.fontsStylesheet; document.head.append(fonts);
+  if (![...document.querySelectorAll('link[rel="stylesheet"]')].some(link => link.getAttribute('href') === c.theme.fontsStylesheet)) {
+    const fonts = document.createElement('link');
+    fonts.rel = 'stylesheet'; fonts.href = c.theme.fontsStylesheet; document.head.append(fonts);
+  }
   for (const key of ['serif', 'script', 'ornamental', 'sans', 'date']) root.style.setProperty(`--font-${key}`, `"${c.theme[key]}"`);
   root.style.setProperty('--wine', c.theme.accent);
-  const photo = (src, className = '', eager = false) => `<img class="${className}" src="${text(src)}" alt="${text(alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async">`;
+  const photo = (src, className = '', eager = false) => `<img class="${className}" src="${text(src)}" alt="${text(alt)}" loading="${eager ? 'eager' : 'lazy'}" ${eager ? 'fetchpriority="high"' : ''} decoding="async">`;
   const decoration = (src, className) => `<img class="decoration ${className}" src="${text(src)}" alt="" aria-hidden="true" decoding="async">`;
   const nameStack = `<span>${text(c.couple.groom)}</span><span class="ampersand">&amp;</span><span>${text(c.couple.bride)}</span>`;
   const day = c.events[0].startsAt;
@@ -109,10 +118,7 @@ async function main() {
   `;
   root.setAttribute('aria-busy', 'false');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const observer = new IntersectionObserver(entries => entries.forEach(entry => {
-    if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
-  }), { threshold: 0.06 });
-  if (!reduced.matches) root.querySelectorAll('.reveal').forEach(el => { el.classList.add('will-reveal'); observer.observe(el); });
+  const observeNewPhotos = setupMotion(root, reduced);
   const toast = message => {
     const el = root.querySelector('.toast'); el.textContent = message; el.classList.add('show');
     clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 4500);
@@ -170,7 +176,7 @@ async function main() {
   lightbox.addEventListener('keydown', event => {
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); showPhoto(galleryIndex + (event.key === 'ArrowLeft' ? -1 : 1)); }
   });
-  root.querySelector('.more-photos')?.addEventListener('click', event => { root.querySelectorAll('.extra-photo').forEach(el => { el.hidden = false; }); event.currentTarget.remove(); });
+  root.querySelector('.more-photos')?.addEventListener('click', event => { root.querySelectorAll('.extra-photo').forEach(el => { el.hidden = false; }); observeNewPhotos(); event.currentTarget.remove(); });
 
   const slides = root.querySelector('.slides'), slideEls = [...slides.children], dots = [...root.querySelectorAll('[data-slide]')];
   let slideIndex = 0, pauseUntil = 0;

@@ -7,7 +7,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
 import { createApp } from '../server.js';
-import { openStore } from '../lib/database.js';
+import { openStore, migrate } from '../lib/database.js';
 import { snapshot, importSnapshot, readSnapshot, writeCsvExports } from '../lib/data-tools.js';
 import { createApi } from '../lib/api.js';
 
@@ -192,6 +192,10 @@ test('two enabled invitation variants use separate events/copy and share photos 
   const { call, login, db } = await boot(t, { configPath });
   const brideConfig = await (await call('/api/config?side=bride')).json();
   const groomConfig = await (await call('/api/config?side=groom')).json();
+  const catalog = await (await call('/invitation-config.json')).json();
+  assert.deepEqual(catalog.find(v => v.side === 'bride').config, brideConfig);
+  assert.deepEqual(catalog.find(v => v.side === 'groom').config, groomConfig);
+  assert.ok(catalog.every(v => Object.keys(v).sort().join(',') === 'config,enabled,label,side'));
   assert.deepEqual(brideConfig.events, config.events);
   assert.equal(groomConfig.events[0].venue, 'ĐỊA ĐIỂM NHÀ TRAI QA');
   assert.equal(groomConfig.copy.invitationText, 'LỜI MỜI NHÀ TRAI QA');
@@ -225,6 +229,8 @@ test('unconfigured groom cannot create links or accidentally show bride events',
   writeFileSync(configPath, JSON.stringify(config));
   const { call, login, db } = await boot(t, { configPath });
   assert.equal((await call('/api/config?side=groom')).status, 409);
+  const catalog = await (await call('/invitation-config.json')).json();
+  assert.deepEqual(catalog.find(v => v.side === 'groom'), { side: 'groom', label: 'Nhà trai', enabled: false });
   const cookie = await login();
   assert.equal((await call('/api/admin/invitations', { name: 'A', side: 'groom' }, cookie)).status, 409);
   assert.equal((await db.execute('SELECT count(*) AS n FROM invitations')).rows[0].n, 0);
@@ -234,6 +240,28 @@ test('unconfigured groom cannot create links or accidentally show bride events',
   config.sides.groom.enabled = true;
   writeFileSync(configPath, JSON.stringify(config));
   assert.throws(() => createApp({ configPath, dbPath: resolve(dir, 'invalid.sqlite') }), /sides.groom/);
+});
+
+test('public configuration responds even when the database cannot become ready', async t => {
+  const config = JSON.parse(readFileSync('config/wedding.json', 'utf8'));
+  const api = createApi({ config, database: new Promise(() => {}), publicBaseUrl: 'http://localhost:3000', vercel: false });
+  const server = createServer(api);
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/api/config`, { signal: AbortSignal.timeout(2000) });
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).couple, config.couple);
+});
+
+test('an upgraded database opens with one schema read and no write transaction', async t => {
+  const db = await openStore({ dbPath: resolve(folder(t), 'schema.sqlite') });
+  t.after(() => db.close());
+  const statements = [];
+  await migrate({
+    execute: async sql => { statements.push(sql); return db.execute(sql); },
+    transaction: () => { throw new Error('Should not open a write transaction'); },
+  });
+  assert.deepEqual(statements, ['PRAGMA user_version']);
 });
 
 test('existing invitations migrate to bride without changing tokens, RSVP or legacy import receipts', async t => {

@@ -53,7 +53,7 @@ try {
   ws = new WebSocket(target.webSocketDebuggerUrl);
   await new Promise((resolve, reject) => { ws.addEventListener('open', resolve, { once: true }); ws.addEventListener('error', reject, { once: true }); });
   let seq = 0;
-  const pending = new Map(), errors = [], failures = [];
+  const pending = new Map(), errors = [], failures = [], requests = [];
   const command = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); });
   let failSubmission = false;
   ws.addEventListener('message', event => {
@@ -61,6 +61,7 @@ try {
     if (message.id) {
       const p = pending.get(message.id); if (p) { pending.delete(message.id); message.error ? p.reject(new Error(JSON.stringify(message.error))) : p.resolve(message.result); }
     } else if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.text);
+    else if (message.method === 'Network.requestWillBeSent') requests.push(message.params.request.url);
     else if (message.method === 'Network.loadingFailed' && !message.params.canceled) failures.push(message.params.errorText);
     else if (message.method === 'Fetch.requestPaused') {
       if (failSubmission) command('Fetch.fulfillRequest', { requestId: message.params.requestId, responseCode: 503, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body: Buffer.from('{"error":"QA failure"}').toString('base64') });
@@ -251,6 +252,34 @@ try {
   await command('Page.navigate', { url: extraUrl + '/?side=groom' });
   await until(`!!document.querySelector('[role="alert"]')`);
   assert.equal(await evaluate(`document.querySelector('[role="alert"]').textContent.includes('đang chờ cập nhật')`), true);
+  // Exercise the animated path too: the earlier form/layout checks use reduced motion.
+  await command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+  await command('Page.navigate', { url });
+  await until(`document.querySelector('#invitation')?.classList.contains('motion-enabled')`);
+  await until(`document.querySelector('.envelope-scene')?.classList.contains('motion-active')`);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('.cover-photo')).animationName`), 'photo-emerge');
+  await delay(2100);
+  await screenshot('animated-cover.png');
+  for (const width of [320, 390, 1440]) {
+    await viewport(width, 900, width < 700);
+    await evaluate(`document.querySelector('.portraits').scrollIntoView({behavior:'instant',block:'center'})`);
+    await until(`[...document.querySelectorAll('.portraits figure')].every(el=>el.classList.contains('visible'))`);
+    assert.equal(await evaluate(`document.documentElement.scrollWidth<=innerWidth`), true, 'motion does not overflow');
+  }
+  await evaluate(`document.querySelector('#album').scrollIntoView({behavior:'instant',block:'start'})`);
+  await until(`document.querySelector('.album-photo').classList.contains('visible')`);
+  await until(`!document.querySelector('.envelope-scene').classList.contains('motion-active')`);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('.lilies')).animationPlayState`), 'paused', 'offscreen decoration pauses');
+  await evaluate(`document.querySelector('.more-photos').click();document.querySelector('.extra-photo').scrollIntoView({behavior:'instant',block:'center'})`);
+  await until(`document.querySelector('.extra-photo').classList.contains('visible')`);
+  await command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+  await until(`!document.querySelector('#invitation').classList.contains('motion-enabled')`);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('.cover-photo')).animationName`), 'none');
+  assert.equal(await evaluate(`[...document.querySelectorAll('.reveal')].every(el=>getComputedStyle(el).opacity==='1')`), true, 'reduced motion leaves all content visible');
+  assert.equal(requests.some(url => new URL(url).pathname === '/api/config'), false, 'viewing invitations uses static content, no config function');
+  assert.ok(requests.some(url => new URL(url).pathname === '/invitation-config.json'));
+  assert.ok(requests.some(url => new URL(url).pathname.endsWith('.woff2')), 'compressed fonts are loaded');
+  assert.equal(requests.some(url => new URL(url).pathname.endsWith('.ttf')), false, 'no original TTF downloads');
   assert.deepEqual(errors, [], 'no uncaught browser exceptions');
   const db = new DatabaseSync(dbPath, { readOnly: true });
   assert.equal(db.prepare('SELECT count(*) AS n FROM rsvps').get().n, 3);

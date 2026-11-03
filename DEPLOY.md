@@ -96,7 +96,11 @@ Nếu chưa có dữ liệu cần giữ, bỏ qua nhập; ứng dụng tự tạ
 3. Nếu repository chỉ chứa dự án, Root Directory là thư mục gốc. Nếu dự án nằm
    trong một repository lớn, chọn `thiep_online`.
 4. Framework: **Other**; Node.js: **24.x**. Build và output lấy từ `vercel.json`:
-   `npm run validate`, thư mục `public`. API trong `api/` chạy bằng Node Functions.
+   `npm run build`, thư mục `public`. API trong `api/` chạy bằng Node Functions.
+   Nếu trước đây đã ghi đè Build Command thành `npm run validate` trong dashboard,
+   hãy đổi thành `npm run build` hoặc tắt ghi đè để dùng `vercel.json`.
+   Build kiểm tra cấu hình/ảnh rồi tạo `public/invitation-config.json` cho CDN;
+   tệp này chỉ chứa nội dung thiệp công khai, không chứa tên khách hay dữ liệu RSVP.
 5. Đặt các Environment Variables dưới đây trước khi Deploy.
 
 | Biến | Production | Preview |
