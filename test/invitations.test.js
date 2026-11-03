@@ -7,7 +7,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
 import { createApp } from '../server.js';
-import { openStore, migrate } from '../lib/database.js';
+import { openStore, openDatabase, migrate } from '../lib/database.js';
 import { snapshot, importSnapshot, readSnapshot, writeCsvExports } from '../lib/data-tools.js';
 import { createApi } from '../lib/api.js';
 
@@ -337,7 +337,24 @@ test('an upgraded database opens with one schema read and no write transaction',
     execute: async sql => { statements.push(sql); return db.execute(sql); },
     transaction: () => { throw new Error('Should not open a write transaction'); },
   });
-  assert.deepEqual(statements, ['PRAGMA user_version']);
+  assert.deepEqual(statements, ['SELECT version FROM schema_migrations WHERE version=2']);
+});
+
+test('migration works when Turso rejects writable PRAGMA statements', async t => {
+  const db = await openDatabase({ dbPath: resolve(folder(t), 'turso-compatible.sqlite') });
+  t.after(() => db.close());
+  const check = sql => assert.doesNotMatch(sql, /PRAGMA\s+\w+\s*=/i);
+  const remote = {
+    execute: (sql, args) => { check(sql); return db.execute(sql, args); },
+    transaction: async () => {
+      const tx = await db.transaction();
+      return { ...tx, execute: statement => { check(statement.sql); return tx.execute(statement); } };
+    },
+  };
+  await migrate(remote);
+  await migrate(remote);
+  assert.equal((await db.execute('SELECT version FROM schema_migrations')).rows[0].version, 2);
+  assert.ok((await db.execute('PRAGMA table_info(invitations)')).rows.some(row => row.name === 'view_count'));
 });
 
 test('existing invitations migrate to bride without changing tokens, RSVP or legacy import receipts', async t => {
