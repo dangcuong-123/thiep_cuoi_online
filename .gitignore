@@ -9,3 +9,4 @@ data/*
 *.log
 test-results/
 public/invitation-config.json
+public/assets/share-cover.jpg

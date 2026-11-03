@@ -91,6 +91,11 @@ Sửa **`config/wedding.json`**, lưu dưới dạng UTF-8, rồi dừng/chạy 
 
 **Ảnh, nhạc, phông chữ và QR:** chép vào `public/assets/` rồi khai báo đường dẫn `/assets/ten-file.jpg`. Nên dùng tên file không dấu và không có khoảng trắng. Tài nguyên được phục vụ local; không cần truy cập CDN để xem thiệp. Nên dùng ảnh dọc cho bìa/chân dung/lời kết, ảnh ngang cho Save the Date. Ảnh được cắt theo khung bằng `object-fit: cover`.
 
+Nhạc mặc định thử phát khi mở thiệp. Nếu trình duyệt chặn tự phát có âm thanh,
+thiệp thử lại ở lần chạm/nhấp đầu tiên hoặc khi nhấn Enter/Space. Nút SOUND ON/OFF
+hiển thị trạng thái phát thực tế; sau khi khách tắt nhạc, các thao tác khác không
+tự bật lại nhạc trong lần xem đó.
+
 Ví dụ thay tên và ngày giờ:
 
 ```json

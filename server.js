@@ -1,10 +1,11 @@
 import { createServer } from 'node:http';
-import { createReadStream, statSync } from 'node:fs';
+import { createReadStream, statSync, readFileSync } from 'node:fs';
 import { resolve, dirname, extname, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadConfig, loadVariants } from './config.js';
 import { createApi, json, securityHeaders } from './lib/api.js';
 import { publicCatalog } from './lib/public-config.js';
+import { renderShareMeta } from './lib/share-meta.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = resolve(ROOT, 'public');
@@ -14,6 +15,8 @@ export function createApp(options = {}) {
   const config = loadConfig(options.configPath || resolve(ROOT, 'config/wedding.json'), PUBLIC);
   const variants = loadVariants(config, PUBLIC);
   const api = createApi({ ...options, config, variants });
+  const shareHtml = renderShareMeta(readFileSync(resolve(PUBLIC, 'index.html'), 'utf8'), config,
+    options.publicBaseUrl || process.env.PUBLIC_BASE_URL || 'http://localhost:3000');
   const server = createServer(async (req, res) => {
     for (const [key, value] of Object.entries(securityHeaders)) res.setHeader(key, value);
     try {
@@ -24,6 +27,10 @@ export function createApp(options = {}) {
       }
       if (pathname.startsWith('/api/')) return api(req, res);
       if (!['GET', 'HEAD'].includes(req.method)) return json(res, 405, { error: 'Phương thức không hỗ trợ.' }, { Allow: 'GET, HEAD' });
+      if (pathname === '/' || pathname === '/index.html') {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+        return res.end(req.method === 'HEAD' ? undefined : shareHtml);
+      }
       const filename = resolve(PUBLIC, pathname === '/' ? 'index.html' : pathname === '/admin' || pathname === '/admin/' ? 'admin.html' : '.' + pathname);
       if (!filename.startsWith(PUBLIC + sep) || pathname.includes('\\') || pathname.split('/').some(part => part.startsWith('.'))) return json(res, 404, { error: 'Không tìm thấy.' });
       let stat;

@@ -150,15 +150,42 @@ async function main() {
   updateCountdown(); setInterval(updateCountdown, 1000);
 
   if (c.music) {
-    const audio = new Audio(c.music); audio.loop = true; audio.preload = 'none';
+    const audio = new Audio(c.music); audio.loop = true; audio.preload = 'metadata';
     const button = root.querySelector('.music-toggle');
+    let wantsMusic = true;
     const update = () => { const playing = !audio.paused; button.classList.toggle('playing', playing); button.setAttribute('aria-pressed', String(playing)); button.setAttribute('aria-label', playing ? ui.soundOn : ui.soundOff); button.querySelector('.sound-label').textContent = playing ? ui.soundOn : ui.soundOff; };
+    const gestures = ['click', 'touchend', 'keydown'];
+    const stopAutomaticStart = () => gestures.forEach(type => document.removeEventListener(type, onGesture, true));
+    const startMusic = async (showError = false) => {
+      try {
+        await audio.play();
+        if (!wantsMusic) audio.pause();
+        else stopAutomaticStart();
+      } catch {
+        // Autoplay blocking is expected on phones; retry during a real interaction.
+        if (showError && wantsMusic) toast(ui.musicError);
+      }
+      update();
+    };
+    function onGesture(event) {
+      if (!wantsMusic || event.target instanceof Element && event.target.closest('.music-toggle')) return;
+      if (event.type === 'keydown' && !['Enter', ' '].includes(event.key)) return;
+      void startMusic();
+    }
     button.addEventListener('click', async () => {
-      if (audio.paused) { try { await audio.play(); } catch { toast(ui.musicError); } }
-      else audio.pause(); update();
+      stopAutomaticStart();
+      if (audio.paused) { wantsMusic = true; await startMusic(true); }
+      else { wantsMusic = false; audio.pause(); update(); }
     });
-    audio.addEventListener('play', update); audio.addEventListener('pause', update);
-    audio.addEventListener('error', () => { audio.pause(); update(); });
+    audio.addEventListener('play', () => {
+      if (!wantsMusic) audio.pause();
+      else stopAutomaticStart();
+      update();
+    });
+    audio.addEventListener('pause', update);
+    audio.addEventListener('error', () => { audio.pause(); stopAutomaticStart(); update(); });
+    gestures.forEach(type => document.addEventListener(type, onGesture, { capture: true, passive: true }));
+    void startMusic();
   }
   let gallery = [], galleryIndex = 0;
   const lightbox = root.querySelector('#lightbox');

@@ -135,6 +135,12 @@ try {
   await evaluate(`document.querySelector('[data-open="wish-dialog"]').click();document.querySelector('#wish-name').value="Khách QA";document.querySelector('#wish-message').value="Chúc hạnh phúc!"; document.querySelector('[data-form="wishes"]').requestSubmit()`);
   await until(`!!document.querySelector('[data-form="wishes"] .success')`);
   await evaluate(`document.querySelector('#wish-dialog').close()`);
+  await until(`document.querySelector('.music-toggle').getAttribute('aria-pressed')==='true'`);
+  // Earlier interactions should have started music if initial autoplay was blocked.
+  await evaluate(`document.querySelector('.music-toggle').click()`);
+  assert.equal(await evaluate(`document.querySelector('.music-toggle').getAttribute('aria-pressed')`), 'false');
+  await evaluate(`document.querySelector('[data-open="wish-dialog"]').click();document.querySelector('#wish-dialog').close()`);
+  assert.equal(await evaluate(`document.querySelector('.music-toggle').getAttribute('aria-pressed')`), 'false', 'explicitly muted music stays off on later interactions');
   await evaluate(`document.querySelector('.music-toggle').click()`);
   await until(`document.querySelector('.music-toggle').getAttribute('aria-pressed')==='true'`);
   await evaluate(`document.querySelector('.music-toggle').click()`);
@@ -286,7 +292,12 @@ try {
   await viewport(390, 900, true);
   await evaluate(`document.querySelector('#album').scrollIntoView({behavior:'instant',block:'start'})`);
   await until(`document.querySelector('.album-photo').classList.contains('visible')`);
-  await until(`!document.querySelector('.envelope-scene').classList.contains('motion-active')`);
+  try {
+    await until(`!document.querySelector('.envelope-scene').classList.contains('motion-active')`);
+  } catch (error) {
+    console.log('Motion viewport diagnostic:', await evaluate(`JSON.stringify({scrollY,innerHeight,visualHeight:visualViewport.height,sceneBottom:document.querySelector('.envelope-scene').getBoundingClientRect().bottom,albumTop:document.querySelector('#album').getBoundingClientRect().top,hidden:document.hidden})`));
+    throw error;
+  }
   assert.equal(await evaluate(`getComputedStyle(document.querySelector('.lilies')).animationPlayState`), 'paused', 'offscreen decoration pauses');
   await evaluate(`document.querySelector('.more-photos').click();document.querySelector('.extra-photo').scrollIntoView({behavior:'instant',block:'center'})`);
   await until(`document.querySelector('.extra-photo').classList.contains('visible')`);

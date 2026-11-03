@@ -49,7 +49,14 @@ export function setupMotion(root, reduced) {
     observeNew();
   };
   reduced.addEventListener('change', update);
-  document.addEventListener('visibilitychange', () => root.classList.toggle('motion-paused', document.hidden));
+  document.addEventListener('visibilitychange', () => {
+    root.classList.toggle('motion-paused', document.hidden);
+    // Retain the scene observer and refresh it when returning to the tab.
+    if (!document.hidden && scene && sceneObserver) {
+      sceneObserver.unobserve(scene);
+      sceneObserver.observe(scene);
+    }
+  });
   // Keyboard navigation must never land on an invisible control.
   root.addEventListener('focusin', event => {
     for (let el = event.target; el && el !== root; el = el.parentElement) {
