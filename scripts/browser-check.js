@@ -83,6 +83,7 @@ try {
   await evaluate('document.fonts.ready');
   assert.equal(await evaluate(`document.querySelector('.cover-caption h2').textContent`), initialConfig.copy.tagline);
   assert.equal(await evaluate(`!!document.querySelector('.cover-guest-name')`), false, 'generic invitation has no invented recipient');
+  if (!initialConfig.copy.rsvpIntro) assert.equal(await evaluate(`document.querySelector('#rsvp > .section-intro')===null`), true, 'omitted RSVP introduction leaves no placeholder');
   // Load lazy images before full-page capture.
   await evaluate(`Promise.all([...document.images].map(img=>{img.loading='eager'; return img.decode().catch(()=>{});}))`);
   const screenshot = async name => {

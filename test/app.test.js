@@ -35,6 +35,16 @@ test('configuration validates fields, calendar dates and asset paths', t => {
   const folder = temporary(t), path = resolve(folder, 'config.json');
   const good = JSON.parse(readFileSync('config/wedding.json', 'utf8'));
   assert.equal(loadConfig('config/wedding.json', resolve('public')).couple.groom, good.couple.groom);
+  const optionalIntro = structuredClone(good);
+  delete optionalIntro.copy.rsvpIntro;
+  writeFileSync(path, JSON.stringify(optionalIntro));
+  assert.equal(loadConfig(path, resolve('public')).copy.rsvpIntro, undefined);
+  optionalIntro.copy.rsvpIntro = '';
+  writeFileSync(path, JSON.stringify(optionalIntro));
+  assert.equal(loadConfig(path, resolve('public')).copy.rsvpIntro, '');
+  optionalIntro.copy.rsvpIntro = 123;
+  writeFileSync(path, JSON.stringify(optionalIntro));
+  assert.throws(() => loadConfig(path, resolve('public')), /copy.rsvpIntro/);
   const optionalParents = structuredClone(good);
   delete optionalParents.families[1].father;
   optionalParents.families[0].mother = '';

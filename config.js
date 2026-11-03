@@ -61,7 +61,8 @@ export function validateConfig(c, publicDir, { checkAssets = true } = {}) {
     catch { fail(`${field}.mapUrl`, 'cần là link http/https hợp lệ'); }
   });
   const copy = object(c.copy, 'copy');
-  for (const key of ['tagline', 'groomLabel', 'brideLabel', 'chapterTitle', 'chapterText', 'saveTheDate', 'invitationTitle', 'invitationText', 'storyTitle', 'calendarTitle', 'albumTitle', 'rsvpIntro', 'giftIntro', 'giftTitle', 'closing']) string(copy[key], `copy.${key}`);
+  for (const key of ['tagline', 'groomLabel', 'brideLabel', 'chapterTitle', 'chapterText', 'saveTheDate', 'invitationTitle', 'invitationText', 'storyTitle', 'calendarTitle', 'albumTitle', 'giftIntro', 'giftTitle', 'closing']) string(copy[key], `copy.${key}`);
+  if (copy.rsvpIntro !== undefined) string(copy.rsvpIntro, 'copy.rsvpIntro', true);
   if (!Array.isArray(copy.story) || copy.story.length === 0) fail('copy.story', 'cần danh sách đoạn văn');
   else copy.story.forEach((text, i) => string(text, `copy.story[${i}]`));
   const ui = object(c.ui, 'ui');
