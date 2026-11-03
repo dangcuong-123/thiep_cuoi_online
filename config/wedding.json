@@ -28,14 +28,6 @@
   ],
   "events": [
     {
-      "title": "HÔN LỄ ĐƯỢC TỔ CHỨC",
-      "startsAt": "2026-11-16T07:30:00+07:00",
-      "lunarDate": "",
-      "venue": "TƯ GIA NHÀ NỮ",
-      "address": "Ngõ 7,  Đường Trấn Ninh, TDP Đức Ninh, Phường Đồng Hới, Tỉnh Quảng Trị",
-      "mapUrl": "https://maps.app.goo.gl/5uJNvNeK7oDM8Z3i7"
-    },
-    {
       "title": "TIỆC CHUNG VUI ĐƯỢC TỔ CHỨC",
       "startsAt": "2026-11-15T11:00:00+07:00",
       "lunarDate": "",
@@ -180,14 +172,6 @@
     "groom": {
       "enabled": true,
       "events": [
-        {
-          "title": "HÔN LỄ ĐƯỢC TỔ CHỨC",
-          "startsAt": "2026-11-28T08:30:00+07:00",
-          "lunarDate": "",
-          "venue": "TƯ GIA NHÀ NAM",
-          "address": "Số 54, Đường Lê Duẩn (Cổng chữ A), Phường Hòa Bình, Tỉnh Phú Thọ",
-          "mapUrl": "https://maps.app.goo.gl/vWejeecjjDES1LEW9"
-        },
         {
           "title": "TIỆC CHUNG VUI ĐƯỢC TỔ CHỨC",
           "startsAt": "2026-11-28T10:30:00+07:00",

@@ -41,6 +41,9 @@ function render() {
   const matchingSide = invitations.filter(i => !side || (i.side || 'bride') === side);
   const counts = matchingSide.reduce((acc, i) => { acc[i.attendance || 'pending']++; return acc; }, { attending: 0, declined: 0, pending: 0 });
   $('#summary').textContent = `${matchingSide.length} thiệp · ${counts.attending} tham dự · ${counts.declined} không tham dự · ${counts.pending} chưa xác nhận`;
+  const views = matchingSide.reduce((total, guest) => total + (guest.view_count || 0), 0);
+  const opened = matchingSide.filter(guest => guest.view_count > 0).length;
+  $('#summary').textContent += ` · ${views} lượt mở link · ${opened} thiệp đã được mở`;
   const search = $('#search').value.trim().toLocaleLowerCase('vi');
   const filtered = matchingSide.filter(i => i.name.toLocaleLowerCase('vi').includes(search));
   $('#empty').hidden = filtered.length > 0;
@@ -57,6 +60,10 @@ function render() {
     time.textContent = `${guest.updated_at ? 'Phản hồi' : 'Tạo thiệp'}: ${new Date(timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`;
     const sideTag = document.createElement('span'); sideTag.className = 'side-label'; sideTag.textContent = sideLabel(guest.side);
     info.append(name, sideTag, time);
+    const views = document.createElement('p'); views.className = 'guest-views';
+    views.textContent = `${guest.view_count || 0} lượt mở link`;
+    if (guest.last_viewed_at) views.textContent += ` · Mở gần nhất: ${new Date(guest.last_viewed_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`;
+    info.append(views);
     const badge = document.createElement('span'); badge.className = `badge ${guest.attendance || ''}`; badge.textContent = statusOf(guest);
     top.append(info, badge);
     const actions = document.createElement('div'); actions.className = 'guest-actions';

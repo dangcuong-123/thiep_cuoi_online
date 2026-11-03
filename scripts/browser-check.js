@@ -174,6 +174,15 @@ try {
   assert.equal(await evaluate(`document.querySelector('.cover-guest-name').children.length`), 0, 'cover recipient is escaped');
   assert.equal(await evaluate(`!!document.querySelector('#rsvp-name')`), false);
   assert.equal(await evaluate(`document.querySelector('.guest-name').children.length`), 0, 'guest name escaped');
+  await evaluate(`document.querySelector('[data-open="wish-dialog"]').click()`);
+  assert.equal(await evaluate(`document.querySelector('#wish-name')===null`), true, 'personal wishes do not ask for name');
+  assert.equal(await evaluate(`document.querySelector('.wish-sender strong').textContent`), guestName);
+  assert.equal(await evaluate(`document.querySelector('.wish-sender strong').children.length`), 0, 'sender is safely escaped');
+  await evaluate(`document.querySelector('#wish-message').value='Lời chúc từ thiệp riêng';document.querySelector('[data-form="wishes"]').requestSubmit()`);
+  await until(`!!document.querySelector('[data-form="wishes"] .success')`);
+  assert.equal(await evaluate(`document.querySelector('#wish-message').value`), '', 'successful wish clears the message');
+  assert.equal(await evaluate(`document.querySelector('.wish-sender strong').textContent`), guestName);
+  await evaluate(`document.querySelector('#wish-dialog').close()`);
   for (const width of [320, 390, 1440]) {
     await viewport(width, 900, width < 700);
     assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'), true, 'personal link overflow');
@@ -200,6 +209,14 @@ try {
   await command('Page.navigate', { url: url + '/admin' });
   await until(`document.querySelectorAll('.guest-card').length===3`);
   assert.equal(await evaluate(`document.querySelector('#summary').textContent.includes('1 không tham dự')`), true);
+  assert.equal(await evaluate(`document.querySelector('#summary').textContent.includes('3 lượt mở link')`), true);
+  assert.equal(await evaluate(`document.querySelector('#summary').textContent.includes('2 thiệp đã được mở')`), true);
+  assert.equal(await evaluate(`document.querySelectorAll('.guest-views').length`), 3);
+  assert.equal(await evaluate(`[...document.querySelectorAll('.guest-views')].filter(el=>el.textContent.includes('Mở gần nhất')).length`), 2);
+  await evaluate(`document.querySelector('#filter-side').value='groom';document.querySelector('#filter-side').dispatchEvent(new Event('change'))`);
+  assert.equal(await evaluate(`document.querySelector('#summary').textContent.includes('1 lượt mở link')`), true);
+  await viewport(320, 740, true);
+  assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'), true, 'view statistics fit narrow admin');
   await evaluate(`document.querySelector('#logout').click()`);
   await until(`!document.querySelector('#login-panel').hidden`);
 
@@ -266,6 +283,7 @@ try {
     await until(`[...document.querySelectorAll('.portraits figure')].every(el=>el.classList.contains('visible'))`);
     assert.equal(await evaluate(`document.documentElement.scrollWidth<=innerWidth`), true, 'motion does not overflow');
   }
+  await viewport(390, 900, true);
   await evaluate(`document.querySelector('#album').scrollIntoView({behavior:'instant',block:'start'})`);
   await until(`document.querySelector('.album-photo').classList.contains('visible')`);
   await until(`!document.querySelector('.envelope-scene').classList.contains('motion-active')`);
@@ -285,7 +303,8 @@ try {
   assert.equal(db.prepare('SELECT count(*) AS n FROM rsvps').get().n, 3);
   assert.equal(db.prepare('SELECT attendance FROM rsvps WHERE invitation_id IS NOT NULL').get().attendance, 'declined');
   assert.equal(db.prepare("SELECT r.attendance FROM rsvps r JOIN invitations i ON r.invitation_id=i.id WHERE i.side='groom'").get().attendance, 'attending');
-  assert.equal(db.prepare('SELECT count(*) AS n FROM wishes').get().n, 1); db.close();
+  assert.equal(db.prepare('SELECT count(*) AS n FROM wishes').get().n, 2);
+  assert.equal(db.prepare('SELECT name FROM wishes WHERE message=?').get('Lời chúc từ thiệp riêng').name, guestName); db.close();
   console.log('Browser QA passed: 390px, 320px, 1440px; local assets, forms, gifts, admin login/create/copy fallback/logout, duplicate names, personalized RSVP updates/reload, invalid links and escaping.');
   console.log(`Screenshots: ${artifacts}\nTemporary QA data: ${temp}`);
   if (failures.length) console.log('Network events:', failures);

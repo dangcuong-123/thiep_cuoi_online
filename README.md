@@ -178,13 +178,20 @@ CSV UTF-8 có BOM được lưu ở `data/exports/<thời-điểm>/rsvps.csv` v�
 | --- | --- |
 | `GET /api/config` | Cấu hình đã kiểm tra khi khởi động |
 | `POST /api/rsvp` | Link chung: `{name, attendance}`; thiệp riêng: `{token, attendance}`. Tên của thiệp riêng luôn lấy từ database. |
-| `GET /api/invitation?token=…` | Tên và trạng thái của đúng một thiệp |
+| `GET /api/invitation?token=…` | Tên và trạng thái của đúng một thiệp; tăng nguyên tử lượt mở link |
 | `POST /api/admin/login`, `POST /api/admin/logout` | Đăng nhập `{password}` / đăng xuất `{}` |
 | `GET /api/admin/session` | Kiểm tra phiên quản trị |
-| `GET/POST /api/admin/invitations` | Liệt kê / tạo thiệp `{name}`; yêu cầu phiên quản trị |
-| `POST /api/wishes` | JSON `{"name":"Tên khách","message":"Chúc hạnh phúc!"}` |
+| `GET/POST /api/admin/invitations` | Liệt kê (kèm `view_count`, `last_viewed_at`) / tạo thiệp `{name, side}`; yêu cầu phiên quản trị |
+| `POST /api/wishes` | Link chung: `{name, message}`; thiệp riêng: `{token, message}`. Máy chủ tra tên người gửi theo token, không tin tên gửi từ trình duyệt. |
 
 Gửi thành công trả HTTP `201`, `{"ok":true}`. Lỗi trả `{"error":"…"}` với mã `400`, `403`, `413`, `415`, `429` hoặc `500` tùy nguyên nhân. Giới hạn body 8 KiB. `429` kèm `Retry-After`. RSVP link chung và lời chúc không cần token; RSVP thiệp riêng cần mã thiệp; không cho phép nguồn web khác gửi qua browser.
+
+Thống kê lượt mở chỉ áp dụng cho link riêng `?guest=…`, bắt đầu từ khi triển khai
+tính năng này. Mở lại/tải lại thiệp và nút Mở thiệp trong admin đều tăng lượt;
+đây không phải số người duy nhất. Link chung, sao chép link, gửi RSVP và làm mới
+danh sách admin không tăng lượt. Tổng thống kê theo bộ lọc nhà trai/nhà gái;
+nhấn Làm mới để lấy số mới nhất. CSV và backup phiên bản 3 lưu cả thống kê;
+vẫn nhập được backup phiên bản 1/2 với số lượt ban đầu là 0.
 
 ## Kiểm tra
 

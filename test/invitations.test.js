@@ -147,6 +147,7 @@ test('JSON cloud backup format preserves personal tokens, identities and updated
   const source = await openStore({ dbPath: resolve(dir, 'source.sqlite') }); t.after(() => source.close());
   const token = 'b'.repeat(48);
   await source.execute('INSERT INTO invitations(id,token,name,side) VALUES (?,?,?,?)', [3, token, 'Gia đình Nguyễn', 'groom']);
+  await source.execute('UPDATE invitations SET view_count=7,last_viewed_at=? WHERE id=3', ['2026-11-03T10:00:00Z']);
   await source.execute('INSERT INTO rsvps(name,attendance,invitation_id,updated_at) VALUES (?,?,?,?)', ['Gia đình Nguyễn', 'declined', 3, '2026-10-30T12:00:00Z']);
   const data = await snapshot(source);
   const jsonPath = resolve(dir, 'cloud-backup.json'); writeFileSync(jsonPath, JSON.stringify(data));
@@ -154,10 +155,85 @@ test('JSON cloud backup format preserves personal tokens, identities and updated
   await importSnapshot(target, readSnapshot(jsonPath));
   assert.deepEqual(await snapshot(target), data);
   assert.equal(data.tables.invitations[0].side, 'groom');
+  assert.equal(data.tables.invitations[0].view_count, 7);
   const guest = (await target.execute('SELECT i.name,r.attendance FROM invitations i JOIN rsvps r ON i.id=r.invitation_id WHERE i.token=?', [token])).rows[0];
   assert.equal(guest.name, 'Gia đình Nguyễn'); assert.equal(guest.attendance, 'declined');
   writeCsvExports(data, resolve(dir, 'csv'));
   assert.ok(readFileSync(resolve(dir, 'csv/invitations.csv'), 'utf8').includes('declined'));
+  assert.ok(readFileSync(resolve(dir, 'csv/invitations.csv'), 'utf8').includes('"view_count","last_viewed_at"'));
+});
+
+test('link opens count atomically, persist and remain private to admin', async t => {
+  const dbPath = resolve(folder(t), 'views.sqlite');
+  const { call, login } = await boot(t, { dbPath });
+  const cookie = await login();
+  const guests = [];
+  for (const side of ['bride', 'bride']) {
+    const response = await call('/api/admin/invitations', { name: 'Khách trùng tên', side }, cookie);
+    guests.push((await response.json()).invitation);
+  }
+  assert.equal(guests[0].view_count, 0);
+  assert.equal(guests[0].last_viewed_at, null);
+  const opens = await Promise.all(Array.from({ length: 20 }, () => call(`/api/invitation?token=${guests[0].token}`)));
+  assert.ok(opens.every(response => response.status === 200));
+  assert.equal((await opens[0].json()).view_count, undefined, 'statistics are not public');
+  assert.equal((await call('/api/invitation?token=' + 'f'.repeat(48))).status, 404);
+  await call('/api/rsvp', { token: guests[0].token, attendance: 'attending' });
+  await call('/api/rsvp', { token: guests[0].token, attendance: 'declined' });
+  const list = async () => (await (await call('/api/admin/invitations', undefined, cookie)).json()).invitations;
+  for (let i = 0; i < 2; i++) {
+    const rows = await list();
+    const viewed = rows.find(row => row.id === guests[0].id);
+    assert.equal(viewed.view_count, 20);
+    assert.ok(Number.isFinite(Date.parse(viewed.last_viewed_at)));
+    assert.equal(viewed.attendance, 'declined');
+    assert.equal(rows.find(row => row.id === guests[1].id).view_count, 0);
+  }
+  assert.equal((await call('/api/admin/invitations')).status, 401);
+  const reopened = await boot(t, { dbPath });
+  const cookie2 = await reopened.login();
+  const rows = (await (await reopened.call('/api/admin/invitations', undefined, cookie2)).json()).invitations;
+  assert.equal(rows.find(row => row.id === guests[0].id).view_count, 20);
+});
+
+test('personal wishes use the invitation name without accepting a forged name', async t => {
+  const { call, login, db } = await boot(t);
+  const cookie = await login();
+  const created = await call('/api/admin/invitations', { name: 'Anh Nguyễn & gia đình <3' }, cookie);
+  const guest = (await created.json()).invitation;
+  assert.equal((await call('/api/wishes', { token: guest.token, message: 'Chúc trăm năm hạnh phúc!' })).status, 201);
+  assert.equal((await call('/api/wishes', { token: guest.token, name: 'Tên giả', message: 'Luôn vui vẻ!' })).status, 201);
+  for (const token of ['', 'invalid', 'e'.repeat(48), null]) {
+    assert.equal((await call('/api/wishes', { token, name: 'Không được dùng tên này', message: 'Chúc vui!' })).status, 404);
+  }
+  assert.equal((await call('/api/wishes', { token: guest.token, message: '   ' })).status, 400);
+  assert.equal((await call('/api/wishes', { name: 'Khách link chung', message: 'Chúc mừng!' })).status, 201);
+  assert.equal((await call('/api/wishes', { message: 'Thiếu tên' })).status, 400);
+  const rows = (await db.execute('SELECT name,message FROM wishes ORDER BY id')).rows;
+  assert.deepEqual(rows.map(row => row.name), [guest.name, guest.name, 'Khách link chung']);
+  assert.equal((await db.execute('SELECT view_count FROM invitations WHERE id=?', [guest.id])).rows[0].view_count, 0, 'sending wishes does not count as opening the link');
+});
+
+test('schema version 1 upgrades view statistics and recognizes version 2 import receipts', async t => {
+  const dir = folder(t), path = resolve(dir, 'before-views.sqlite');
+  const old = new DatabaseSync(path);
+  old.exec(`CREATE TABLE invitations(id INTEGER PRIMARY KEY,token TEXT UNIQUE,name TEXT,created_at TEXT,side TEXT);
+    CREATE TABLE rsvps(id INTEGER PRIMARY KEY,name TEXT,attendance TEXT,created_at TEXT,invitation_id INTEGER,updated_at TEXT);
+    CREATE TABLE wishes(id INTEGER PRIMARY KEY,name TEXT,message TEXT,created_at TEXT);
+    PRAGMA user_version=1;`);
+  old.prepare('INSERT INTO invitations VALUES (1,?,?,?,?)').run('d'.repeat(48), 'Khách cũ', '2026-01-01T00:00:00Z', 'groom');
+  const previous = { version: 2, tables: { invitations: old.prepare('SELECT * FROM invitations').all(), rsvps: [], wishes: [] } };
+  const receipt = createHash('sha256').update(JSON.stringify(previous.tables)).digest('hex');
+  old.close();
+  const db = await openStore({ dbPath: path }); t.after(() => db.close());
+  assert.equal((await db.execute('SELECT view_count FROM invitations')).rows[0].view_count, 0);
+  assert.equal((await db.execute('SELECT last_viewed_at FROM invitations')).rows[0].last_viewed_at, null);
+  assert.equal(readdirSync(resolve(dir, 'backups')).length, 1);
+  await db.execute('INSERT INTO data_imports VALUES (?,?)', [receipt, '2026-01-01T00:00:00Z']);
+  assert.equal((await importSnapshot(db, previous)).skipped, true);
+  const target = await openStore({ dbPath: resolve(dir, 'restore.sqlite') }); t.after(() => target.close());
+  await importSnapshot(target, previous);
+  assert.equal((await snapshot(target)).tables.invitations[0].view_count, 0);
 });
 
 test('serverless handler accepts a pre-parsed Vercel body and trusts proxy IP only in Vercel mode', async t => {
