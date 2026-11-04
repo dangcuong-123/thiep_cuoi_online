@@ -43,6 +43,10 @@ export function setupWishWall(dialog) {
   };
   more.addEventListener('click', () => { void refresh(false); });
   dialog.querySelector('.view-wishes').addEventListener('click', () => wall.scrollIntoView({ block: 'start', behavior: 'instant' }));
-  dialog.addEventListener('close', () => { active?.abort(); active = null; });
+  dialog.addEventListener('close', () => {
+    // The close event is queued; a quick reopen may already have started a new fetch.
+    if (dialog.open) return;
+    active?.abort(); active = null;
+  });
   return refresh;
 }

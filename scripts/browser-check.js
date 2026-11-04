@@ -206,11 +206,23 @@ try {
   await until(`document.querySelector('.wish-entry p')?.textContent==='Lời chúc từ thiệp riêng'`);
   assert.equal(await evaluate(`document.querySelector('.wish-entry h4').textContent`), guestName);
   assert.equal(await evaluate(`document.querySelector('.wish-entry h4').children.length`), 0, 'public wish author is safely escaped');
+  await evaluate(`(()=>{const list=document.querySelector('.wish-list');for(let i=0;i<30;i++)list.append(list.firstElementChild.cloneNode(true));})()`);
   for (const width of [320, 390]) {
     await viewport(width, 844, true);
     assert.equal(await evaluate(`document.querySelector('#wish-dialog').scrollWidth<=document.querySelector('#wish-dialog').clientWidth`), true, 'wish list fits phone');
   }
-  await evaluate(`document.querySelector('#wish-dialog').close()`);
+  for (const width of [320, 390, 1440]) {
+    await viewport(width, 844, width < 700);
+    await evaluate(`document.querySelector('#wish-dialog').scrollTop=100000`);
+    const close = await evaluate(`(()=>{const dialog=document.querySelector('#wish-dialog'),button=dialog.querySelector('[data-close]');const d=dialog.getBoundingClientRect(),b=button.getBoundingClientRect();return {top:b.top-d.top,right:d.right-b.right,x:b.left+b.width/2,y:b.top+b.height/2,scroll:dialog.scrollTop,hit:document.elementFromPoint(b.left+b.width/2,b.top+b.height/2)?.closest('[data-close]')===button}})()`);
+    assert.ok(close.scroll > 1000, 'long list is scrolled down');
+    assert.ok(close.top >= 0 && close.top < 12 && close.right >= 0 && close.right < 30, 'close button stays in top right corner');
+    assert.equal(close.hit, true, 'sticky close button remains clickable');
+  }
+  const closePoint = await evaluate(`(()=>{const r=document.querySelector('#wish-dialog [data-close]').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()`);
+  await command('Input.dispatchMouseEvent', { type: 'mousePressed', button: 'left', clickCount: 1, ...closePoint });
+  await command('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, ...closePoint });
+  assert.equal(await evaluate(`document.querySelector('#wish-dialog').open`), false, 'close works after scrolling many wishes');
   for (const width of [320, 390, 1440]) {
     await viewport(width, 900, width < 700);
     assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'), true, 'personal link overflow');
