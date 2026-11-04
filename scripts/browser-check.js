@@ -133,8 +133,22 @@ try {
   await evaluate(`document.querySelector('[data-form="rsvp"]').requestSubmit()`);
   await until(`!!document.querySelector('[data-form="rsvp"] .success')`);
   await command('Fetch.disable');
-  await evaluate(`document.querySelector('[data-open="wish-dialog"]').click();document.querySelector('#wish-name').value="Khách QA";document.querySelector('#wish-message').value="Chúc hạnh phúc!"; document.querySelector('[data-form="wishes"]').requestSubmit()`);
+  await evaluate(`document.querySelector('[data-open="wish-dialog"]').click()`);
+  await until(`document.querySelector('.wish-list-status').textContent.includes('Chưa có lời chúc')`);
+  await evaluate(`document.querySelector('#wish-name').value="Khách QA";document.querySelector('#wish-message').value="Chúc hạnh phúc!"; document.querySelector('[data-form="wishes"]').requestSubmit()`);
   await until(`!!document.querySelector('[data-form="wishes"] .success')`);
+  await until(`document.querySelector('.wish-entry p')?.textContent==='Chúc hạnh phúc!'`);
+  assert.equal(await evaluate(`document.querySelector('.wish-entry h4').textContent`), 'Khách QA');
+  await evaluate(`document.querySelector('#wish-dialog').close()`);
+  await command('Fetch.enable', { patterns: [{ urlPattern: '*/api/wishes' }] });
+  failSubmission = true;
+  await evaluate(`document.querySelector('[data-open="wish-dialog"]').click()`);
+  await until(`!document.querySelector('.wish-retry').hidden`);
+  assert.equal(await evaluate(`document.querySelector('[data-form="wishes"] [type="submit"]').disabled`), false, 'list loading failure does not block writing');
+  failSubmission = false;
+  await evaluate(`document.querySelector('.wish-retry').click()`);
+  await until(`document.querySelector('.wish-list-status').textContent==='' && document.querySelector('.wish-retry').hidden`);
+  await command('Fetch.disable');
   await evaluate(`document.querySelector('#wish-dialog').close()`);
   await until(`document.querySelector('.music-toggle').getAttribute('aria-pressed')==='true'`);
   // Earlier interactions should have started music if initial autoplay was blocked.
@@ -189,6 +203,13 @@ try {
   await until(`!!document.querySelector('[data-form="wishes"] .success')`);
   assert.equal(await evaluate(`document.querySelector('#wish-message').value`), '', 'successful wish clears the message');
   assert.equal(await evaluate(`document.querySelector('.wish-sender strong').textContent`), guestName);
+  await until(`document.querySelector('.wish-entry p')?.textContent==='Lời chúc từ thiệp riêng'`);
+  assert.equal(await evaluate(`document.querySelector('.wish-entry h4').textContent`), guestName);
+  assert.equal(await evaluate(`document.querySelector('.wish-entry h4').children.length`), 0, 'public wish author is safely escaped');
+  for (const width of [320, 390]) {
+    await viewport(width, 844, true);
+    assert.equal(await evaluate(`document.querySelector('#wish-dialog').scrollWidth<=document.querySelector('#wish-dialog').clientWidth`), true, 'wish list fits phone');
+  }
   await evaluate(`document.querySelector('#wish-dialog').close()`);
   for (const width of [320, 390, 1440]) {
     await viewport(width, 900, width < 700);

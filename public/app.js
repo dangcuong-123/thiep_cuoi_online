@@ -1,5 +1,6 @@
 import { displayDate, eventTime, countdown, calendar } from './core.js';
 import { setupMotion } from './motion.js';
+import { setupWishWall } from './wishes.js';
 
 const root = document.querySelector('#invitation');
 const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -111,7 +112,7 @@ async function main() {
     <footer class="closing">${photo(p.closing)}<div class="closing-copy reveal"><p>${text(names)}</p>${decoration(d.flourish, 'closing-flourish')}<h2>${text(copy.closing)}</h2></div></footer>
     <nav class="bottom-nav" aria-label="${text(ui.menu)}"><div class="nav-left">${c.music ? `<button class="music-toggle" aria-pressed="false" aria-label="${text(ui.soundOff)}">${icon('music')}<span><b class="sound-label">${text(ui.soundOff)}</b><i class="sound-bars"><i></i><i></i><i></i><i></i></i></span></button>` : ''}</div><button class="icon-button" data-open="menu-dialog" aria-label="${text(ui.menu)}">${icon('menu')}</button><button class="wish-button" data-open="wish-dialog">${text(ui.wishes)}</button></nav>
     <dialog id="menu-dialog" class="menu-dialog" aria-labelledby="menu-title">${closeButton}<h2 id="menu-title">${text(ui.menu)}</h2><nav>${menu.map(([id, title], i) => `<a href="#${id}"><small>0${i + 1}</small>${text(title)}${icon('arrow')}</a>`).join('')}</nav></dialog>
-    <dialog id="wish-dialog" class="wish-dialog" aria-labelledby="wish-title">${closeButton}<form data-form="wishes"><h2 id="wish-title">${text(ui.wishes)}</h2><p class="wish-names">${text(names)}</p>${guest ? `<p class="wish-sender">Người gửi: <strong>${text(guest.name)}</strong></p>` : formName('wish')}<label for="wish-message">${text(ui.message)}</label><textarea id="wish-message" name="message" rows="5" maxlength="2000" placeholder="${text(ui.messagePlaceholder)}" required></textarea><button class="pill" type="submit">${text(ui.sendWish)}</button><p class="form-status" role="status" aria-live="polite"></p></form></dialog>
+    <dialog id="wish-dialog" class="wish-dialog" aria-labelledby="wish-title">${closeButton}<form data-form="wishes"><h2 id="wish-title">${text(ui.wishes)}</h2><p class="wish-names">${text(names)}</p><button type="button" class="view-wishes">Xem lời chúc của mọi người ↓</button>${guest ? `<p class="wish-sender">Người gửi: <strong>${text(guest.name)}</strong></p>` : formName('wish')}<p class="wish-public-note">Lời chúc và tên người gửi sẽ được hiển thị công khai bên dưới.</p><label for="wish-message">${text(ui.message)}</label><textarea id="wish-message" name="message" rows="5" maxlength="2000" placeholder="${text(ui.messagePlaceholder)}" required></textarea><button class="pill" type="submit">${text(ui.sendWish)}</button><p class="form-status" role="status" aria-live="polite"></p></form><section class="wish-wall" aria-labelledby="wish-wall-title"><h3 id="wish-wall-title">Những lời chúc yêu thương</h3><p class="wish-list-status" role="status" aria-live="polite"></p><div class="wish-list" aria-busy="false"></div><button type="button" class="wish-load-more" hidden>Xem thêm lời chúc</button><button type="button" class="wish-retry" hidden>Thử lại</button></section></dialog>
     <dialog id="lightbox" class="lightbox" aria-label="${text(copy.albumTitle)}">${closeButton}<div class="lightbox-stage"><button class="icon-button lightbox-previous" aria-label="${text(ui.previous)}">${icon('arrow')}</button><img alt="${text(alt)}"><button class="icon-button lightbox-next" aria-label="${text(ui.next)}">${icon('arrow')}</button></div><p class="lightbox-counter" role="status"></p></dialog>
     ${c.gifts.length ? `<dialog id="gift-dialog" class="gift-dialog${c.gifts.length > 1 ? ' gift-dialog-split' : ''}" aria-labelledby="gift-title">${closeButton}<h2 id="gift-title">${text(copy.giftTitle)}</h2><div class="gift-accounts">${c.gifts.map((gift, i) => `<article class="gift-account"><h3>${text(gift.title)}</h3><div class="gift-qr-slot">${gift.qrImage ? `<img class="gift-qr" data-qr-src="${text(gift.qrImage)}" alt="${text(gift.title)} QR" hidden>` : ''}<p class="qr-pending" role="status">${text(ui.qrPending || 'QR ngân hàng sẽ được cập nhật sớm.')}</p></div>${gift.bank ? `<p>${text(gift.bank)}</p>` : ''}${gift.accountName ? `<p>${text(gift.accountName)}</p>` : ''}${gift.accountNumber ? `<p class="account-number">${text(gift.accountNumber)}</p><button class="pill copy-account" data-gift="${i}">${text(ui.copyAccount)}</button>` : ''}</article>`).join('')}</div><p class="copy-status" role="status"></p></dialog>` : ''}
     <p class="toast" role="status" aria-live="polite"></p>
@@ -123,9 +124,12 @@ async function main() {
     const el = root.querySelector('.toast'); el.textContent = message; el.classList.add('show');
     clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 4500);
   };
+  const wishDialog = root.querySelector('#wish-dialog');
+  const refreshWishes = setupWishWall(wishDialog);
   root.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
     const dialog = document.getElementById(button.dataset.open);
     dialog.showModal();
+    if (dialog === wishDialog) void refreshWishes();
     // Load on open so a QR copied into assets appears without restarting the server.
     if (dialog.id === 'gift-dialog') dialog.querySelectorAll('[data-qr-src]').forEach(img => {
       const pending = img.parentElement.querySelector('.qr-pending');
@@ -242,6 +246,10 @@ async function main() {
       status.textContent = form.dataset.form === 'rsvp' ? ui.rsvpSuccess : ui.wishSuccess;
       status.classList.add('success');
       if (!(guest && form.dataset.form === 'rsvp')) form.reset();
+      if (form.dataset.form === 'wishes' && wishDialog.open) {
+        void refreshWishes();
+        wishDialog.querySelector('.wish-wall').scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
     } catch (error) { status.textContent = error.name === 'TypeError' || error.name === 'TimeoutError' ? ui.sendError : error.message; }
     finally { delete form.dataset.pending; button.disabled = false; button.textContent = label; }
   }));

@@ -188,6 +188,7 @@ CSV UTF-8 có BOM được lưu ở `data/exports/<thời-điểm>/rsvps.csv` v�
 | `GET /api/admin/session` | Kiểm tra phiên quản trị |
 | `GET/POST /api/admin/invitations` | Liệt kê (kèm `view_count`, `last_viewed_at`) / tạo thiệp `{name, side}`; yêu cầu phiên quản trị |
 | `POST /api/wishes` | Link chung: `{name, message}`; thiệp riêng: `{token, message}`. Máy chủ tra tên người gửi theo token, không tin tên gửi từ trình duyệt. |
+| `GET /api/wishes?before=…` | Danh sách lời chúc công khai, mới nhất trước; 20 lời chúc/trang, trả `nextCursor` để xem tiếp. Chỉ trả id, tên người gửi, nội dung và thời điểm gửi. |
 
 Gửi thành công trả HTTP `201`, `{"ok":true}`. Lỗi trả `{"error":"…"}` với mã `400`, `403`, `413`, `415`, `429` hoặc `500` tùy nguyên nhân. Giới hạn body 8 KiB. `429` kèm `Retry-After`. RSVP link chung và lời chúc không cần token; RSVP thiệp riêng cần mã thiệp; không cho phép nguồn web khác gửi qua browser.
 

@@ -214,6 +214,30 @@ test('personal wishes use the invitation name without accepting a forged name', 
   assert.equal((await db.execute('SELECT view_count FROM invitations WHERE id=?', [guest.id])).rows[0].view_count, 0, 'sending wishes does not count as opening the link');
 });
 
+test('public wish wall is paginated, newest first and exposes only wish fields', async t => {
+  const { call, db } = await boot(t, { rateLimit: 1 });
+  assert.deepEqual(await (await call('/api/wishes')).json(), { wishes: [], nextCursor: null });
+  for (let i = 1; i <= 45; i++) await db.execute('INSERT INTO wishes(name,message) VALUES (?,?)', [`Khách ${i}`, `Lời chúc ${i}\n❤️`]);
+  const first = await (await call('/api/wishes')).json();
+  assert.equal(first.wishes.length, 20);
+  assert.equal(first.wishes[0].id, 45);
+  assert.equal(first.nextCursor, 26);
+  for (const row of first.wishes) assert.deepEqual(Object.keys(row).sort(), ['created_at', 'id', 'message', 'name']);
+  // A new wish between requests does not shift the pagination or repeat entries.
+  await db.execute('INSERT INTO wishes(name,message) VALUES (?,?)', ['Khách mới', '<img src=x onerror=alert(1)>']);
+  const second = await (await call('/api/wishes?before=' + first.nextCursor)).json();
+  const third = await (await call('/api/wishes?before=' + second.nextCursor)).json();
+  const ids = [...first.wishes, ...second.wishes, ...third.wishes].map(row => row.id);
+  assert.deepEqual(ids, Array.from({ length: 45 }, (_, i) => 45 - i));
+  assert.equal(third.nextCursor, null);
+  const latest = await (await call('/api/wishes')).json();
+  assert.equal(latest.wishes[0].message, '<img src=x onerror=alert(1)>');
+  for (const value of ['', '-1', '0', 'bad', '1.5', '9007199254740992']) assert.equal((await call('/api/wishes?before=' + value)).status, 400);
+  assert.deepEqual(await (await call('/api/wishes?before=1')).json(), { wishes: [], nextCursor: null });
+  assert.equal((await call('/api/wishes', { name: 'Khách gửi', message: 'Chúc mừng!' })).status, 201, 'viewing wishes does not consume submission limits');
+  assert.equal((await call('/api/wishes', { name: 'Khách gửi', message: 'Gửi quá nhanh' })).status, 429);
+});
+
 test('schema version 1 upgrades view statistics and recognizes version 2 import receipts', async t => {
   const dir = folder(t), path = resolve(dir, 'before-views.sqlite');
   const old = new DatabaseSync(path);

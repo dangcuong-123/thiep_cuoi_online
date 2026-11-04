@@ -89,7 +89,7 @@ test('RSVP and wishes persist after restart; validation and private data boundar
     assert.equal((await post(url, '/api/wishes', 'a'.repeat(9000))).status, 413);
     assert.equal((await post(url, '/api/wishes', {}, { 'Content-Type': 'text/plain' })).status, 415);
     assert.equal((await post(url, '/api/rsvp', { name: 'A', attendance: 'attending' }, { Origin: 'https://another.example' })).status, 403);
-    assert.equal((await fetch(url + '/api/wishes')).status, 405);
+    assert.equal((await fetch(url + '/api/wishes')).status, 200);
     for (const path of ['/data/wedding.sqlite', '/config/wedding.json', '/server.js', '/api/rsvps', '/%2e%2e%5cserver.js']) assert.equal((await fetch(url + path)).status, 404, path);
     assert.equal((await fetch(url + '/%ZZ')).status, 400);
     const range = await fetch(url + config.music, { headers: { Range: 'bytes=0-99' } });
