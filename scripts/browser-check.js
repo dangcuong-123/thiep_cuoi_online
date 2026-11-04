@@ -55,7 +55,8 @@ try {
   let seq = 0;
   const pending = new Map(), errors = [], failures = [], requests = [];
   const command = (method, params = {}) => new Promise((resolve, reject) => { const id = ++seq; pending.set(id, { resolve, reject }); ws.send(JSON.stringify({ id, method, params })); });
-  let failSubmission = false;
+  let failSubmission = false, acceptDelete = false;
+  const confirmations = [];
   ws.addEventListener('message', event => {
     const message = JSON.parse(event.data);
     if (message.id) {
@@ -63,6 +64,11 @@ try {
     } else if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.text);
     else if (message.method === 'Network.requestWillBeSent') requests.push(message.params.request.url);
     else if (message.method === 'Network.loadingFailed' && !message.params.canceled) failures.push(message.params.errorText);
+    else if (message.method === 'Page.javascriptDialogOpening') {
+      confirmations.push(message.params.message);
+      if (message.params.type !== 'confirm') errors.push('Unexpected browser dialog');
+      void command('Page.handleJavaScriptDialog', { accept: acceptDelete });
+    }
     else if (message.method === 'Fetch.requestPaused') {
       if (failSubmission) command('Fetch.fulfillRequest', { requestId: message.params.requestId, responseCode: 503, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body: Buffer.from('{"error":"QA failure"}').toString('base64') });
       else command('Fetch.continueRequest', { requestId: message.params.requestId });
@@ -187,6 +193,27 @@ try {
   await screenshot('admin.png');
   await evaluate(`Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('denied')}}});document.querySelector('#copy-created').click()`);
   await until(`document.querySelector('#create-form .status').textContent.includes('Ctrl+C')`);
+  await evaluate(`document.querySelector('#invitation-side').value='bride';document.querySelector('#invitation-side').dispatchEvent(new Event('change'));document.querySelector('#guest-name').value=${JSON.stringify(guestName)};document.querySelector('#create-form').requestSubmit()`);
+  await until(`document.querySelectorAll('.guest-card').length===4`);
+  const mistakenToken = await evaluate(`new URL(document.querySelector('#created-url').value).searchParams.get('guest')`);
+  await evaluate(`document.querySelector('.delete-invitation').click()`);
+  assert.equal(confirmations.length, 1);
+  assert.ok(confirmations[0].includes(guestName), 'confirmation identifies the selected recipient');
+  assert.equal(await evaluate(`document.querySelectorAll('.guest-card').length`), 4, 'cancel keeps the invitation');
+  await command('Fetch.enable', { patterns: [{ urlPattern: '*/api/admin/delete-invitation' }] });
+  failSubmission = true; acceptDelete = true;
+  await evaluate(`document.querySelector('.delete-invitation').click()`);
+  await until(`document.querySelector('.guest-card .copy-hint').textContent.includes('QA failure')`);
+  assert.equal(await evaluate(`document.querySelectorAll('.guest-card').length`), 4, 'failed deletion keeps the invitation');
+  assert.equal(await evaluate(`document.querySelector('.delete-invitation').disabled`), false);
+  failSubmission = false;
+  await command('Fetch.disable');
+  await evaluate(`document.querySelector('.delete-invitation').click()`);
+  await until(`document.querySelectorAll('.guest-card').length===3`);
+  assert.equal(await evaluate(`document.querySelector('#created').hidden`), true, 'deleted last-created link is cleared');
+  assert.equal(await evaluate(`fetch('/api/invitation?token=${mistakenToken}').then(r=>r.status)`), 404);
+  assert.equal(await evaluate(`document.querySelectorAll('.guest-card h3').length`), 3);
+  acceptDelete = false;
   const personalUrl = url + '/?guest=' + personal.token;
   await command('Page.navigate', { url: personalUrl });
   await until(`!!document.querySelector('.guest-name')`);

@@ -187,6 +187,7 @@ CSV UTF-8 có BOM được lưu ở `data/exports/<thời-điểm>/rsvps.csv` v�
 | `POST /api/admin/login`, `POST /api/admin/logout` | Đăng nhập `{password}` / đăng xuất `{}` |
 | `GET /api/admin/session` | Kiểm tra phiên quản trị |
 | `GET/POST /api/admin/invitations` | Liệt kê (kèm `view_count`, `last_viewed_at`) / tạo thiệp `{name, side}`; yêu cầu phiên quản trị |
+| `POST /api/admin/delete-invitation` | Xóa thiệp theo `{id, token}`; yêu cầu phiên quản trị. Xóa nguyên tử thiệp và RSVP liên quan, giữ lời chúc và dữ liệu của thiệp khác. |
 | `POST /api/wishes` | Link chung: `{name, message}`; thiệp riêng: `{token, message}`. Máy chủ tra tên người gửi theo token, không tin tên gửi từ trình duyệt. |
 | `GET /api/wishes?before=…` | Danh sách lời chúc công khai, mới nhất trước; 20 lời chúc/trang, trả `nextCursor` để xem tiếp. Chỉ trả id, tên người gửi, nội dung và thời điểm gửi. |
 

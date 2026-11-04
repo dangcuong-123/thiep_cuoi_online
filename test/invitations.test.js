@@ -214,6 +214,51 @@ test('personal wishes use the invitation name without accepting a forged name', 
   assert.equal((await db.execute('SELECT view_count FROM invitations WHERE id=?', [guest.id])).rows[0].view_count, 0, 'sending wishes does not count as opening the link');
 });
 
+test('admin deletes only the selected invitation and its RSVP, preserving wishes and duplicate names', async t => {
+  const { call, login, db } = await boot(t);
+  const cookie = await login();
+  const guests = [];
+  for (let i = 0; i < 2; i++) guests.push((await (await call('/api/admin/invitations', { name: 'Khách trùng tên' }, cookie)).json()).invitation);
+  const target = { id: guests[0].id, token: guests[0].token };
+  for (const guest of guests) await call('/api/rsvp', { token: guest.token, attendance: 'attending' });
+  await call('/api/rsvp', { name: 'Khách trùng tên', attendance: 'declined' });
+  await call('/api/wishes', { token: target.token, message: 'Chúc mừng!' });
+  assert.equal((await call('/api/admin/delete-invitation', target)).status, 401);
+  assert.equal((await call('/api/admin/delete-invitation', target, cookie, { Origin: 'https://evil.example' })).status, 403);
+  assert.equal((await call('/api/admin/delete-invitation', undefined, cookie)).status, 405);
+  for (const body of [{}, { id: '1', token: target.token }, { id: -1, token: target.token }, { ...target, token: 'bad' }]) {
+    assert.equal((await call('/api/admin/delete-invitation', body, cookie)).status, 400);
+  }
+  assert.equal((await call('/api/admin/delete-invitation', { ...target, token: guests[1].token }, cookie)).status, 404);
+  assert.equal((await call('/api/admin/delete-invitation', target, cookie)).status, 200);
+  assert.equal((await call('/api/invitation?token=' + target.token)).status, 404);
+  assert.equal((await call('/api/rsvp', { token: target.token, attendance: 'attending' })).status, 404);
+  assert.equal((await call('/api/wishes', { token: target.token, message: 'Link cũ' })).status, 404);
+  assert.equal((await call('/api/admin/delete-invitation', target, cookie)).status, 404);
+  assert.equal((await call('/api/invitation?token=' + guests[1].token)).status, 200);
+  assert.equal((await db.execute('SELECT count(*) AS n FROM invitations')).rows[0].n, 1);
+  assert.equal((await db.execute('SELECT count(*) AS n FROM rsvps')).rows[0].n, 2);
+  assert.equal((await db.execute('SELECT count(*) AS n FROM wishes')).rows[0].n, 1);
+  // A stale card must not delete a new invitation that reuses the numeric id.
+  await db.execute('INSERT INTO invitations(id,token,name) VALUES (?,?,?)', [target.id, '9'.repeat(48), 'Khách mới']);
+  assert.equal((await call('/api/admin/delete-invitation', target, cookie)).status, 404);
+  assert.equal((await db.execute('SELECT name FROM invitations WHERE id=?', [target.id])).rows[0].name, 'Khách mới');
+  const expired = await login();
+  await db.execute('UPDATE admin_sessions SET expires_at=0');
+  assert.equal((await call('/api/admin/delete-invitation', { id: target.id, token: '9'.repeat(48) }, expired)).status, 401);
+});
+
+test('failed invitation deletion rolls back the related RSVP deletion', async t => {
+  const { call, login, db } = await boot(t);
+  const cookie = await login();
+  const guest = (await (await call('/api/admin/invitations', { name: 'Giữ nguyên khi lỗi' }, cookie)).json()).invitation;
+  await call('/api/rsvp', { token: guest.token, attendance: 'attending' });
+  await db.execute("CREATE TRIGGER prevent_test_delete BEFORE DELETE ON invitations BEGIN SELECT RAISE(ABORT, 'test rollback'); END");
+  assert.equal((await call('/api/admin/delete-invitation', { id: guest.id, token: guest.token }, cookie)).status, 500);
+  assert.equal((await db.execute('SELECT count(*) AS n FROM invitations')).rows[0].n, 1);
+  assert.equal((await db.execute('SELECT count(*) AS n FROM rsvps WHERE invitation_id=?', [guest.id])).rows[0].n, 1);
+});
+
 test('public wish wall is paginated, newest first and exposes only wish fields', async t => {
   const { call, db } = await boot(t, { rateLimit: 1 });
   assert.deepEqual(await (await call('/api/wishes')).json(), { wishes: [], nextCursor: null });

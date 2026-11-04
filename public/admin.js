@@ -72,7 +72,22 @@ function render() {
     const input = document.createElement('input'); input.readOnly = true; input.hidden = true; input.setAttribute('aria-label', `Link thiệp của ${guest.name}`);
     const hint = document.createElement('p'); hint.className = 'copy-hint'; hint.setAttribute('role', 'status');
     copyButton.addEventListener('click', () => copy(guest.url, input, hint));
-    actions.append(copyButton, open);
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'danger delete-invitation'; remove.textContent = 'Xóa thiệp';
+    remove.setAttribute('aria-label', `Xóa thiệp của ${guest.name}`);
+    remove.addEventListener('click', async () => {
+      if (!window.confirm(`Xóa thiệp của “${guest.name}” (${sideLabel(guest.side)})?\nLink này sẽ không còn mở được.${guest.attendance ? '\nPhản hồi tham dự của thiệp cũng sẽ được xóa.' : ''}`)) return;
+      remove.disabled = true; remove.textContent = 'Đang xóa…'; hint.textContent = ''; pageStatus.textContent = '';
+      try {
+        await api('delete-invitation', { id: guest.id, token: guest.token });
+        invitations = invitations.filter(item => item.token !== guest.token);
+        if ($('#created-url').value === guest.url) { $('#created-url').value = ''; $('#created').hidden = true; }
+        render(); pageStatus.textContent = `Đã xóa thiệp của ${guest.name}.`;
+      } catch (error) {
+        const message = ['TypeError', 'TimeoutError'].includes(error.name) ? 'Chưa xóa được thiệp. Vui lòng thử lại.' : error.message;
+        hint.textContent = message; pageStatus.textContent = message;
+      } finally { remove.disabled = false; remove.textContent = 'Xóa thiệp'; }
+    });
+    actions.append(copyButton, open, remove);
     card.append(top, actions, input, hint); list.append(card);
   }
 }
