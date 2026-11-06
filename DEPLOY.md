@@ -101,7 +101,8 @@ Nếu chưa có dữ liệu cần giữ, bỏ qua nhập; ứng dụng tự tạ
    hãy đổi thành `npm run build` hoặc tắt ghi đè để dùng `vercel.json`.
    Build kiểm tra cấu hình/ảnh rồi tạo `public/invitation-config.json` cho CDN;
    tệp này chỉ chứa nội dung thiệp công khai, không chứa tên khách hay dữ liệu RSVP.
-   Build cũng tạo thumbnail JPG 1200×630 từ `photos.cover` và ghi thẻ Open Graph
+   Build cũng tạo thumbnail JPG giữ nguyên tỷ lệ từ `photos.cover` (tối đa
+   1200×1200, không thêm nền hai bên) và ghi kích thước thực trong thẻ Open Graph
    trực tiếp vào HTML. Dùng `PUBLIC_BASE_URL` HTTPS chính thức để ảnh chia sẻ có
    địa chỉ công khai; Preview dùng địa chỉ deployment riêng. Khi thay ảnh bìa,
    build tự đổi phiên bản URL ảnh để nền tảng có thể lấy ảnh mới.
