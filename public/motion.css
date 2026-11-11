@@ -25,7 +25,9 @@
 .motion-paused .envelope-scene > * { animation-play-state: paused; }
 .motion-enabled dialog[open] { animation: dialog-arrive .3s ease-out both; }
 .motion-enabled dialog[open]::backdrop { animation: backdrop-arrive .3s ease-out both; }
-.motion-enabled .gift-trigger:hover .gift-illustration { animation: gift-rock .65s ease-in-out; }
+.motion-enabled .gift-trigger .gift-illustration { animation: gift-rock 2.8s ease-in-out infinite; transform-origin: 50% 85%; }
+.motion-enabled .gift-hint { animation: gift-hint-bounce 1.8s ease-in-out infinite; }
+.motion-paused .gift-illustration, .motion-paused .gift-hint { animation-play-state: paused; }
 .map-link, .pill, .submit-button { transition: transform .2s ease, box-shadow .2s ease; }
 .map-link:active, .pill:active, .submit-button:active { transform: scale(.97); }
 @media (hover: hover) {
@@ -53,7 +55,8 @@
 @keyframes ribbon-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px) rotate(2deg); } }
 @keyframes dialog-arrive { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes backdrop-arrive { from { opacity: 0; } to { opacity: 1; } }
-@keyframes gift-rock { 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+@keyframes gift-rock { 0%,50%,100% { transform: rotate(0); } 10%,30% { transform: rotate(-3deg); } 20%,40% { transform: rotate(3deg); } }
+@keyframes gift-hint-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @media (prefers-reduced-motion: reduce) {
   .will-reveal { opacity: 1; transform: none; }
 }
